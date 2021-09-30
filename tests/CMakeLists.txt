@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.16)
+
+find_package(Catch2 REQUIRED)
+include(Catch)
+
+add_executable(proto_bt_tests Tests.cpp)
+
+set_target_properties(proto_bt_tests PROPERTIES UNITY_BUILD OFF)
+target_link_libraries(proto_bt_tests PRIVATE Catch2::Catch2 bt)
+
+catch_discover_tests(proto_bt_tests)
+
