@@ -98,14 +98,14 @@ First we have to make sure, we set the first byte of your data to the `key` and 
 
 ## Overview
 Here is an overview about all the known characteristics and services exposed by the coffee maker and some additional information in case we have found out, how to use them.
-
-| --- | --- | --- | 
+ 
 | Name | Characteristic | Notes |
+| --- | --- | --- |
 | Default | `5a401523-ab2e-2548-c435-08c300000710` | Default service containing all relevant characteristics. |
 | UART | `5a401623-ab2e-2548-c435-08c300000710` | Contains a TX and RX UART characteristic. |
 
-| --- | --- | --- |
 | Name | Characteristic | Encoded |
+| --- | --- | --- |
 | About Machine | `5A401531-AB2E-2548-C435-08C300000710` | `false` |
 | Machine Status | `5a401524-ab2e-2548-c435-08c300000710` | `true` |
 | Barista Mode | `5a401530-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
