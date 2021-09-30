@@ -122,11 +122,13 @@ Here is an overview about all the known characteristics and services exposed by 
 ### About Machine
 * `5A401531-AB2E-2548-C435-08C300000710`
 * Encoded: `false`
+
 This characteristic can only be read and provides general information about the coffee maker like the `bfVerStr` (8 byte, starts at byte 27) and the `coffeeMachineVerStr` (17 byte, starts at byte 35).
 
 ### Machine Status
 * `5a401524-ab2e-2548-c435-08c300000710`
 * Encoded: `true`
+
 When reading from this characteristic, the received data has be be decoded. Once decoded, the first byte has to be the `key` used for decoding. Else, something went wrong.
 Starting from byte 1, the data represents status bits for the coffee maker.
 For example bit 0 is set in case the water tray is missing and bit 1 of the first byte in case there is not enough water.
@@ -136,11 +138,13 @@ More about this here: [Reverse Engineering](#reverse-engineering)
 ### UART TX
 * `5a401624-ab2e-2548-c435-08c300000710`
 * Encoded: `UNKNOWN`
+
 Probably exposes a raw TX interface for interaction directly with the coffee maker.
 
 ### UART RX
 * `5a401625-ab2e-2548-c435-08c300000710`
 * Encoded: `UNKNOWN`
+
 Probably exposes a raw RX interface for interaction directly with the coffee maker.
 
 ## Building
