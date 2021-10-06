@@ -2,6 +2,7 @@
 `C++` JURA Bluetooth protocol implementation for controlling a JURA coffee maker over a Bluetooth connection.
 
 For a device to be able to connect to an JURA coffee maker via Bluetooth, usually a [Smart Control](https://uk.jura.com/en/homeproducts/accessories/SmartConnect-Main-72167) dongle is required.
+
 ![Smart Control dongle](https://user-images.githubusercontent.com/11741404/135412711-23fd1946-77bc-45db-8795-f30da4421578.png)
 
 Most of this was done by [Reverse Engineering](#reverse-engineering) the Android APK.
@@ -94,6 +95,12 @@ Once decoded successfully, the first byte of the resulting data has to be the `k
 When encoding data which should be written to Bluetooth characteristics, we again need the `key` we have obtained like described above.
 First we have to make sure, we set the first byte of your data to the `key` and then feed it to [`encDecBytes`](https://github.com/Jutta-Proto/protocol-bt-cpp/blob/0adb1ea802df13aac03262033706755f431f93b6/src/bt/ByteEncDecoder.cpp#L33-L47), like we have done for decoding.
 
+### Heartbeat
+The coffee maker stays initially connected for 20 seconds. After that it disconnects.
+To prevent this, we have to send at least every 10 seconds a heartbeat to it.
+The heartbeat is `0x007F80` encoded and the send to the `P Mode` Characteristic `5a401538-ab2e-2548-c435-08c300000710`.
+For example if the key is `42`, then the encoded data send should be `0x77656d` (without the `0x` ;) ).
+
 ## Bluetooth Characteristics
 
 ## Overview
@@ -110,8 +117,8 @@ Here is an overview about all the known characteristics and services exposed by 
 | Machine Status | `5a401524-ab2e-2548-c435-08c300000710` | `true` |
 | Barista Mode | `5a401530-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
 | Product Progress | `5a401527-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
-| "P"? Mode | `5a401529-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
-| "P"? Mode Read | `5a401538-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
+| P Mode | `5a401529-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
+| P Mode Read | `5a401538-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
 | Start Product | `5a401525-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
 | Statistics Command | `5A401533-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
 | Statistics Data | `5A401534-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
@@ -134,6 +141,21 @@ Starting from byte 1, the data represents status bits for the coffee maker.
 For example bit 0 is set in case the water tray is missing and bit 1 of the first byte in case there is not enough water.
 For an exact mapping of bits to their action we need the machine files found for example inside the Android app.
 More about this here: [Reverse Engineering](#reverse-engineering)
+
+### P Mode
+* `5a401529-ab2e-2548-c435-08c300000710`
+* Encoded: `true`
+To begin with: I don't know what the "P" stands for.
+Used for sending the heartbeat to the coffee maker to prevent it from disconnecting.
+
+### Start Product
+* `5a401525-ab2e-2548-c435-08c300000710`
+* Encoded: `True`
+Used to start preparing products.
+**Example:**  
+Sending `0x0003000414000001000100000000002A` (don't forget to encode it first) to the coffee maker will start brewing a coffee maker.
+In case the key is `42`, `0x77e93dd55381d3dba32bfa98a4a3faf9` will be send to the coffee maker.  
+More research is required to find out, what the individual parts stand for.
 
 ### UART TX
 * `5a401624-ab2e-2548-c435-08c300000710`
