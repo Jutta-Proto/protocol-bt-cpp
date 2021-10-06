@@ -153,9 +153,10 @@ void CoffeeMaker::shutdown() {
 
 void CoffeeMaker::request_coffee() {
     SPDLOG_INFO("Requesting coffee...");
-    static const std::string commandHexStr = "77e93dd55381d3dba32bfa98a4a3faf9";  // Decoded: 2A03000414000001000100000000002A
+    static const std::string commandHexStr = "0003000428000002000100000000002A";
+    // static const std::string commandHexStr = "77e93dd55381d3dba32bfa98a4a3faf9";  // Decoded: 2A03000414000001000100000000002A
     static const std::vector<uint8_t> command = from_hex_string(commandHexStr);
-    write(RELEVANT_UUIDS.START_PRODUCT_CHARACTERISTIC_UUID, command, false, false);
+    write(RELEVANT_UUIDS.START_PRODUCT_CHARACTERISTIC_UUID, command, true, false);
 }
 
 void CoffeeMaker::stay_in_ble() {

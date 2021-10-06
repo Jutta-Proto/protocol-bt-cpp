@@ -10,8 +10,9 @@ Most of this was done by [Reverse Engineering](#reverse-engineering) the Android
 ## Table of Contents
 1. [Protocol](#protocol)
 2. [Bluetooth Characteristics](#bluetooth-characteristics)
-3. [Building](#building)
-4. [Reverse Engineering](#reverse-engineering)
+3. [Brewing Coffee](#brewing-coffee)
+4. [Building](#building)
+5. [Reverse Engineering](#reverse-engineering)
 
 ## Protocol
 
@@ -152,10 +153,7 @@ Used for sending the heartbeat to the coffee maker to prevent it from disconnect
 * `5a401525-ab2e-2548-c435-08c300000710`
 * Encoded: `True`
 Used to start preparing products.
-**Example:**  
-Sending `0x0003000414000001000100000000002A` (don't forget to encode it first) to the coffee maker will start brewing a coffee maker.
-In case the key is `42`, `0x77e93dd55381d3dba32bfa98a4a3faf9` will be send to the coffee maker.  
-More research is required to find out, what the individual parts stand for.
+How to brew coffee can be found here: [Brewing Coffee](#brewing-coffee)
 
 ### UART TX
 * `5a401624-ab2e-2548-c435-08c300000710`
@@ -168,6 +166,28 @@ Probably exposes a raw TX interface for interaction directly with the coffee mak
 * Encoded: `UNKNOWN`
 
 Probably exposes a raw RX interface for interaction directly with the coffee maker.
+
+## Brewing Coffee
+A command for starting preparing a product is build out of multiple parts.
+Those parts depend on the machine file for the coffee maker.
+The following example uses the `EF532V2.xml` file for an JURA E6 coffee maker.
+More about this here: [Reverse Engineering](#reverse-engineering)
+
+For example we have a look at the following command (decoded) send to the coffee maker:
+```
+00 03 00 04 14 0000 01 00010000000000 2A
+0  1  2  3  4  5    6  7              8
+```
+
+* `0`: Will be replaced later by the `key`, when encoding.
+* `1`: Product type e.g. `03` for coffee, or `04` for a cappuccino.
+* `2`: Unknown
+* `3`: Strength when brewing a coffee. Value between `01` and `08` with `04` being the default.
+* `4`: Amount of water in seconds. 1 second equals 5 ml water.
+* `5`: Unknown
+* `6`: Temperature. `01` Normal, `02` High
+* `7`: Unknown
+* `8`: Probably some kind of checksum or the same value as the `key` at part `0`.
 
 ## Building
 
