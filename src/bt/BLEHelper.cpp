@@ -16,6 +16,7 @@ void on_device_discovered(void* adapter, const char* addr, const char* name, voi
         args->addr = addr;
         gattlib_adapter_scan_disable(adapter);
         SPDLOG_INFO("Coffee maker found!");
+        args->doneMutex.unlock();
     }
     args->m.unlock();
     if (name) {
@@ -33,13 +34,16 @@ std::shared_ptr<ScanArgs> scan_for_device(std::string&& name) {
 
     std::shared_ptr<ScanArgs> args = std::make_shared<ScanArgs>();
     args->name = std::move(name);
+    args->doneMutex.lock();
 
     size_t timeoutSeconds = 0;
-    if (gattlib_adapter_scan_enable(adapter, &on_device_discovered, timeoutSeconds, &args)) {
+    if (gattlib_adapter_scan_enable(adapter, &on_device_discovered, timeoutSeconds, args.get())) {
         SPDLOG_ERROR("Bluetooth scan failed.");
         gattlib_adapter_close(adapter);
         return nullptr;
     }
+    args->doneMutex.lock();
+    args->doneMutex.unlock();
     gattlib_adapter_close(adapter);
     SPDLOG_INFO("Scan stoped");
     if (args->success) {

@@ -9,6 +9,7 @@
 namespace bt {
 //---------------------------------------------------------------------------
 struct ScanArgs {
+    std::mutex doneMutex;
     std::mutex m;
     std::string name;
     bool success{false};

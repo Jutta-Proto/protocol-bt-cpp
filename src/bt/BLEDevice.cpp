@@ -122,7 +122,7 @@ bool BLEDevice::write(const uuid_t& characteristic, const std::vector<uint8_t>& 
     uuid_t uuid = characteristic;
     std::array<char, MAX_LEN_UUID_STR + 1> uuidStr{};
     gattlib_uuid_to_string(&uuid, uuidStr.data(), uuidStr.size());
-    if (gattlib_write_without_response_char_by_uuid(connection, &uuid, data.data(), data.size()) == GATTLIB_SUCCESS) {
+    if (gattlib_write_char_by_uuid(connection, &uuid, data.data(), data.size()) == GATTLIB_SUCCESS) {
         SPDLOG_DEBUG("Wrote {} byte to characteristic '{}'.", data.size(), uuidStr.data());
         return true;
     }

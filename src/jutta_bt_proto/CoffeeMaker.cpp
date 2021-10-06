@@ -141,42 +141,39 @@ bool CoffeeMaker::write(const uuid_t& characteristic, const std::vector<uint8_t>
         }
         encodedData = bt::encDecBytes(encodedData, key);
     }
+    SPDLOG_TRACE("Wrote: {}", to_hex_string(encodedData));
     return bleDevice.write(characteristic, encodedData);
 }
 
-void CoffeeMaker::restart_coffee_maker() {
-    SPDLOG_INFO("Restarting the coffee maker...");
+void CoffeeMaker::shutdown() {
+    SPDLOG_INFO("Shutting down the coffee maker...");
     static const std::vector<uint8_t> command{0x00, 0x46, 0x02};
     write(RELEVANT_UUIDS.P_MODE_CHARACTERISTIC_UUID, command, true, false);
 }
 
 void CoffeeMaker::request_coffee() {
     SPDLOG_INFO("Requesting coffee...");
-    static const std::vector<uint8_t> command{0x00, 0x03, 0x02};
-    write(RELEVANT_UUIDS.START_PRODUCT_CHARACTERISTIC_UUID, command, true, true);
+    static const std::string commandHexStr = "77e93dd55381d3dba32bfa98a4a3faf9";  // Decoded: 2A03000414000001000100000000002A
+    static const std::vector<uint8_t> command = from_hex_string(commandHexStr);
+    write(RELEVANT_UUIDS.START_PRODUCT_CHARACTERISTIC_UUID, command, false, false);
 }
 
 void CoffeeMaker::stay_in_ble() {
     SPDLOG_INFO("Sending stay in BLE mode...");
     static const std::vector<uint8_t> command{0x00, 0x7F, 0x80};
-    write(RELEVANT_UUIDS.START_PRODUCT_CHARACTERISTIC_UUID, command, true, false);
+    write(RELEVANT_UUIDS.P_MODE_CHARACTERISTIC_UUID, command, true, false);
 }
 
 void CoffeeMaker::on_connected() {
     // Ensure we have the key for deobfuscation ready:
     analyze_man_data();
+    // Send the initial hearbeat:
     stay_in_ble();
-    restart_coffee_maker();
-
-    // Read the initial status:
-    // bleDevice.read_characteristics();
-    request_status();
-    request_progress();
+    // Request basic information:
     request_about_info();
 }
 
-void CoffeeMaker::on_disconnected() {
-}
+void CoffeeMaker::on_disconnected() {}
 
 bool CoffeeMaker::connect() {
     return bleDevice.connect();

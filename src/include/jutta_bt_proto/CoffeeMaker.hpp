@@ -72,11 +72,10 @@ class CoffeeMaker {
      * Returns true in case the coffee maker is connected via bluetooth.
      **/
     bool is_connected();
-
     /**
-     * Sends the restart command to the coffee maker.
+     * Performs a gracefull shutdown with rinsing.
      **/
-    void restart_coffee_maker();
+    void shutdown();
     /**
      * Requests the current status of the coffee maker.
      **/
@@ -89,17 +88,23 @@ class CoffeeMaker {
      * Requests the about coffee maker info.
      **/
     void request_about_info();
+    /**
+     * Heartbeat that should be send at least once every ten seconds, so the coffee maker stays connected.
+     **/
+    void stay_in_ble();
+    void request_coffee();
 
  private:
+    /**
+     * Analyzes the manufacturer specific data from the advertisement send by the coffee maker.
+     * Extracts the encryption key, machine number, serial number, ...
+     **/
     void analyze_man_data();
     void parse_man_data(const std::vector<uint8_t>& data);
     void parse_about_data(const std::vector<uint8_t>& data);
     static void parse_product_progress(const std::vector<uint8_t>& data, uint8_t key);
-    void request_coffee();
-    void stay_in_ble();
     static void parse_machine_status(const std::vector<uint8_t>& data, uint8_t key);
     static std::string parse_version(const std::vector<uint8_t>& data, size_t from, size_t to);
-
     /**
      * Converts the given data to an uint16_t from little endian.
      **/
@@ -108,14 +113,12 @@ class CoffeeMaker {
      * Parses the given data as a std::chrono::year_month_day object.
      **/
     static std::chrono::year_month_day to_ymd(const std::vector<uint8_t>& data, size_t offset);
-
     /**
      * Writes the given data to the given characteristic.
      * Allows you to specify wether the data should be encoded and the key inside the data should be overriden.
      * Usually you only want to set encode to true.
      **/
     bool write(const uuid_t& characteristic, const std::vector<uint8_t>& data, bool encode, bool overrideKey);
-
     /**
      * Event handler that gets triggered when a characteristic got read.
      * data: The data read which might be encoded and has to be decoded.
