@@ -116,16 +116,16 @@ Here is an overview about all the known characteristics and services exposed by 
 | --- | --- | --- |
 | About Machine | `5A401531-AB2E-2548-C435-08C300000710` | `false` |
 | Machine Status | `5a401524-ab2e-2548-c435-08c300000710` | `true` |
-| Barista Mode | `5a401530-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
-| Product Progress | `5a401527-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
-| P Mode | `5a401529-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
+| Barista Mode | `5a401530-ab2e-2548-c435-08c300000710` | `true` |
+| Product Progress | `5a401527-ab2e-2548-c435-08c300000710` | `true` |
+| P Mode | `5a401529-ab2e-2548-c435-08c300000710` | `true` |
 | P Mode Read | `5a401538-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
-| Start Product | `5a401525-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
+| Start Product | `5a401525-ab2e-2548-c435-08c300000710` | `true` |
 | Statistics Command | `5A401533-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
 | Statistics Data | `5A401534-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
 | Update Product Statistics | `5a401528-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
-| UART TX | `5a401624-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
-| UART RX | `5a401625-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
+| UART TX | `5a401624-ab2e-2548-c435-08c300000710` | `true` |
+| UART RX | `5a401625-ab2e-2548-c435-08c300000710` | `true` |
 
 ### About Machine
 * `5A401531-AB2E-2548-C435-08C300000710`
