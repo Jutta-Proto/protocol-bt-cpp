@@ -78,6 +78,7 @@ include(${CMAKE_BINARY_DIR}/conan.cmake)
 
 conan_cmake_configure(REQUIRES catch2/2.13.6
                                spdlog/1.8.5
+                               tinyxml2/8.0.0
                       GENERATORS cmake_find_package
                       BUILD missing)
 
@@ -96,6 +97,7 @@ conan_cmake_install(PATH_OR_REFERENCE .
                     SETTINGS ${settings})
 
 find_package(spdlog REQUIRED)
+find_package(tinyxml2 REQUIRED)
 
 # Disable linting for fetch content projects
 clear_variable(DESTINATION CMAKE_CXX_CLANG_TIDY BACKUP CMAKE_CXX_CLANG_TIDY_BKP)

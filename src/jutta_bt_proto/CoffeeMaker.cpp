@@ -6,6 +6,8 @@
 #include "logger/Logger.hpp"
 #include <cassert>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <thread>
 #include <bluetooth/sdp.h>
 #include <spdlog/spdlog.h>
@@ -68,12 +70,22 @@ void CoffeeMaker::parse_about_data(const std::vector<uint8_t>& data) {
 }
 
 void CoffeeMaker::parse_machine_status(const std::vector<uint8_t>& data, uint8_t key) {
+    if (!joe) {
+        return;
+    }
+
     std::vector<std::uint8_t> alertVec = bt::encDecBytes(data, key);
-    // If this one fails, the deobfuscation failed:
-    assert(alertVec[0] == key);
-    // TODO parse bits
-    // Start with an offset of one byte, since the first byte should represent the key for deobfuscating.
-    SPDLOG_INFO("Machine status alertVec: {}", to_hex_string(alertVec));
+    for (size_t i = 0; i < (alertVec.size() - 1) << 3; i++) {
+        size_t offsetAbs = (i >> 3) + 1;
+        size_t offsetByte = 7 - (i & 0b111);
+        if ((alertVec[offsetAbs] >> offsetByte) & 0b1) {
+            for (const Alert& alert : joe->alerts) {
+                if (alert.bit == i) {
+                    SPDLOG_INFO("ALERT '{}' set.", alert.name);
+                }
+            }
+        }
+    }
 }
 
 void CoffeeMaker::parse_product_progress(const std::vector<uint8_t>& data, uint8_t key) {
@@ -102,8 +114,9 @@ void CoffeeMaker::parse_man_data(const std::vector<uint8_t>& data) {
         // NOLINTNEXTLINE(concurrency-mt-unsafe)
         exit(-1);
     }
-    machine = &(machines.at(articleNumber));
-    SPDLOG_INFO("Found machine '{}' Version: {}", machine->name, machine->version);
+    const Machine* machine = &(machines.at(articleNumber));
+    joe = load_joe(machine);
+    SPDLOG_INFO("Found machine '{}' Version: {} with {} products.", machine->name, machine->version, joe->products.size());
 }
 
 void CoffeeMaker::parse_rx(const std::vector<uint8_t>& data, uint8_t key) {

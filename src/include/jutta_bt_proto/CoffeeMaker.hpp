@@ -4,6 +4,7 @@
 #include "jutta_bt_proto/CoffeeMakerLoader.hpp"
 #include <chrono>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <string>
 #include <thread>
@@ -54,7 +55,7 @@ class CoffeeMaker {
     std::optional<std::thread> heartbeatThread{std::nullopt};
 
     const std::unordered_map<size_t, const Machine> machines;
-    const Machine* machine{nullptr};
+    std::shared_ptr<Joe> joe{nullptr};
 
     // Manufacturer advertisment data:
     uint8_t key{0};
@@ -137,7 +138,7 @@ class CoffeeMaker {
     void parse_man_data(const std::vector<uint8_t>& data);
     void parse_about_data(const std::vector<uint8_t>& data);
     static void parse_product_progress(const std::vector<uint8_t>& data, uint8_t key);
-    static void parse_machine_status(const std::vector<uint8_t>& data, uint8_t key);
+    void parse_machine_status(const std::vector<uint8_t>& data, uint8_t key);
     static void parse_rx(const std::vector<uint8_t>& data, uint8_t key);
     static std::string parse_version(const std::vector<uint8_t>& data, size_t from, size_t to);
     /**
