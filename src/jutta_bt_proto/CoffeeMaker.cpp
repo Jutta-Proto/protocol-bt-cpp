@@ -3,6 +3,9 @@
 #include "gattlib.h"
 #include "jutta_bt_proto/Utils.hpp"
 #include "logger/Logger.hpp"
+#include <cassert>
+#include <chrono>
+#include <thread>
 #include <bluetooth/sdp.h>
 #include <spdlog/spdlog.h>
 
@@ -197,11 +200,49 @@ void CoffeeMaker::on_connected() {
 void CoffeeMaker::on_disconnected() {}
 
 bool CoffeeMaker::connect() {
-    return bleDevice.connect();
+    state = CoffeeMakerState::CONNECTING;
+    if (bleDevice.connect()) {
+        state = CoffeeMakerState::CONNECTED;
+
+        // Start the heartbeat thread:
+        assert(!heartbeatThread);
+        heartbeatThread = std::make_optional<std::thread>(&CoffeeMaker::heartbeat_run, this);
+        SPDLOG_INFO("Connected.");
+        return true;
+    }
+    state = CoffeeMakerState::DISCONNECTED;
+    SPDLOG_WARN("Failed to connect.");
+    return false;
 }
 
-bool CoffeeMaker::is_connected() {
-    return bleDevice.is_connected();
+void CoffeeMaker::disconnect() {
+    if (state == CoffeeMakerState::CONNECTING || state == CoffeeMakerState::CONNECTED) {
+        state = CoffeeMakerState::DISCONNECTING;
+
+        // Send the disconnect command:
+        static const std::vector<uint8_t> command{0x00, 0x7F, 0x81};
+        write(RELEVANT_UUIDS.P_MODE_CHARACTERISTIC_UUID, command, true, false);
+
+        // Join the heartbeat thread:
+        assert(heartbeatThread);
+        heartbeatThread->join();
+        heartbeatThread = std::nullopt;
+        state = CoffeeMakerState::DISCONNECTED;
+        SPDLOG_INFO("Disconnected.");
+    }
+}
+
+CoffeeMakerState CoffeeMaker::get_state() {
+    return state;
+}
+
+void CoffeeMaker::heartbeat_run() {
+    SPDLOG_INFO("Heartbeat thread started.");
+    while (state == CoffeeMakerState::CONNECTED || state == CoffeeMakerState::CONNECTING) {
+        stay_in_ble();
+        std::this_thread::sleep_for(std::chrono::seconds{1});
+    }
+    SPDLOG_INFO("Heartbeat thread ready to be joined.");
 }
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_proto

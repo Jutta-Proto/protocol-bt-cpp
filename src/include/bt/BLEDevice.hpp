@@ -44,6 +44,7 @@ class BLEDevice {
     ~BLEDevice() = default;
 
     bool connect();
+    void disconnect();
     [[nodiscard]] bool is_connected() const;
     const std::vector<uint8_t> get_mam_data();
     void read_characteristics();

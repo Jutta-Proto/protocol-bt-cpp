@@ -78,6 +78,10 @@ bool BLEDevice::connect() {
     return true;
 }
 
+void BLEDevice::disconnect() {
+    gattlib_disconnect(connection);
+}
+
 bool BLEDevice::is_connected() const {
     return connected;
 }

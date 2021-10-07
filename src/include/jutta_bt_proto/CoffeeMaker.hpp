@@ -4,6 +4,7 @@
 #include <chrono>
 #include <optional>
 #include <string>
+#include <thread>
 #include <vector>
 #include <bluetooth/sdp.h>
 
@@ -33,12 +34,21 @@ struct RelevantUUIDs {
     static void to_uuid(const std::string& s, uuid_t* uuid);
 } __attribute__((aligned(128)));
 
+enum CoffeeMakerState {
+    DISCONNECTED,
+    CONNECTING,
+    CONNECTED,
+    DISCONNECTING
+};
+
 class CoffeeMaker {
  public:
     static const RelevantUUIDs RELEVANT_UUIDS;
 
  private:
     bt::BLEDevice bleDevice;
+    CoffeeMakerState state{CoffeeMakerState::DISCONNECTED};
+    std::optional<std::thread> heartbeatThread{std::nullopt};
 
     // Manufacturer advertisment data:
     uint8_t key{0};
@@ -69,9 +79,13 @@ class CoffeeMaker {
      **/
     bool connect();
     /**
-     * Returns true in case the coffee maker is connected via bluetooth.
+     * Gracefully disconnects from the coffee maker.
      **/
-    bool is_connected();
+    void disconnect();
+    /**
+     * Returns the CoffeeMakerState indicating the current connection state.
+     **/
+    CoffeeMakerState get_state();
     /**
      * Performs a gracefull shutdown with rinsing.
      **/
@@ -147,6 +161,11 @@ class CoffeeMaker {
      * Event handler that gets triggered when the coffee maker is disconnected.
      **/
     void on_disconnected();
+    /**
+     * Handels the periodic sending of the heartbeat to the coffee maker.
+     * Should be the entry point of a new thread.
+     **/
+    void heartbeat_run();
 };
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_proto
