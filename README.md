@@ -198,7 +198,7 @@ The following requirements are required to build this project.
 * For managing dependencies in CMake, we are using [conan](https://conan.io/)
 
 ### Machine Files
-Since this lib uses the machine files provided by JURA in their Android APK, we have to extract the first.
+Since this lib uses the machine files provided by JURA in their Android APK, we have to extract them first.
 For this you have to perform the following steps:
 
 1. Visit the [Google Play](https://play.google.com/store/apps/details?id=ch.toptronic.joe) page for the `J.O.E.® – Jura Operating Experience`.
