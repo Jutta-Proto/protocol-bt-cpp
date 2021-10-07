@@ -57,6 +57,7 @@ const std::vector<uint8_t> BLEDevice::get_mam_data() {
 
 bool BLEDevice::connect() {
     assert(!connection);
+    assert(!connected);
     connection = gattlib_connect(nullptr, addr.c_str(), GATTLIB_CONNECTION_OPTIONS_LEGACY_DEFAULT);
     if (!connection) {
         return false;
@@ -79,7 +80,9 @@ bool BLEDevice::connect() {
 }
 
 void BLEDevice::disconnect() {
-    gattlib_disconnect(connection);
+    if (connection) {
+        gattlib_disconnect(connection);
+    }
 }
 
 bool BLEDevice::is_connected() const {
@@ -148,9 +151,12 @@ bool BLEDevice::subscribe(const uuid_t& characteristic) {
 
 void BLEDevice::on_disconnected(void* arg) {
     BLEDevice* device = static_cast<BLEDevice*>(arg);
-    device->connected = false;
-    device->onDisconnected();
-    SPDLOG_DEBUG("BLEDevice disconnected.");
+    if (device->connected) {
+        device->connected = false;
+        device->connection = nullptr;
+        device->onDisconnected();
+        SPDLOG_DEBUG("BLEDevice disconnected.");
+    }
 }
 
 void BLEDevice::on_notification(const uuid_t* uuid, const uint8_t* data, size_t len, void* arg) {

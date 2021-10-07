@@ -23,7 +23,7 @@ int main(int /*argc*/, char** /*argv*/) {
         SPDLOG_INFO("Coffee maker found.");
         jutta_bt_proto::CoffeeMaker coffeeMaker(std::string{result->name}, std::string{result->addr});
         coffeeMaker.connect();
-        for (size_t i = 0; i < 40; i++) {
+        for (size_t i = 0; i < 5; i++) {
             std::this_thread::sleep_for(std::chrono::seconds{1});
         }
         coffeeMaker.disconnect();
