@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
 add_library(jutta_bt_proto SHARED CoffeeMaker.cpp
-                                  Utils.cpp)
+                                  Utils.cpp
+                                  CoffeeMakerLoader.cpp)
 
 target_link_libraries(jutta_bt_proto PUBLIC bt
                                      PRIVATE logger)

@@ -1,6 +1,7 @@
 #include "jutta_bt_proto/CoffeeMaker.hpp"
 #include "bt/ByteEncDecoder.hpp"
 #include "gattlib.h"
+#include "jutta_bt_proto/CoffeeMakerLoader.hpp"
 #include "jutta_bt_proto/Utils.hpp"
 #include "logger/Logger.hpp"
 #include <cassert>
@@ -47,7 +48,8 @@ CoffeeMaker::CoffeeMaker(std::string&& name, std::string&& addr) : bleDevice(
                                                                        [this](const std::vector<uint8_t>& data, const uuid_t& uuid) { this->on_characteristic_read(data, uuid); },
                                                                        [this]() { this->on_connected(); },
                                                                        [this]() { this->on_disconnected(); },
-                                                                       [this](const std::vector<uint8_t>& data, const uuid_t& uuid) { this->on_characteristic_read(data, uuid); }) {}
+                                                                       [this](const std::vector<uint8_t>& data, const uuid_t& uuid) { this->on_characteristic_read(data, uuid); }),
+                                                                   machines(load_machines("../resources/machinefiles/JOE_MACHINES.TXT")) {}
 
 std::string CoffeeMaker::parse_version(const std::vector<uint8_t>& data, size_t from, size_t to) {
     std::string result;

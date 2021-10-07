@@ -1,10 +1,12 @@
 #pragma once
 
 #include "bt/BLEDevice.hpp"
+#include "jutta_bt_proto/CoffeeMakerLoader.hpp"
 #include <chrono>
 #include <optional>
 #include <string>
 #include <thread>
+#include <unordered_set>
 #include <vector>
 #include <bluetooth/sdp.h>
 
@@ -50,6 +52,8 @@ class CoffeeMaker {
     CoffeeMakerState state{CoffeeMakerState::DISCONNECTED};
     std::optional<std::thread> heartbeatThread{std::nullopt};
 
+    const std::unordered_set<Machine, Machine::HashFunction> machines;
+
     // Manufacturer advertisment data:
     uint8_t key{0};
     uint8_t bfMajVer{0};
@@ -69,7 +73,7 @@ class CoffeeMaker {
  public:
     explicit CoffeeMaker(std::string&& name, std::string&& addr);
     CoffeeMaker(CoffeeMaker&&) = default;
-    CoffeeMaker(const CoffeeMaker&) = default;
+    CoffeeMaker(const CoffeeMaker&) = delete;
     CoffeeMaker& operator=(CoffeeMaker&&) = delete;
     CoffeeMaker& operator=(const CoffeeMaker&) = delete;
     ~CoffeeMaker() = default;
