@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
-#include <unordered_set>
+#include <unordered_map>
 
 //---------------------------------------------------------------------------
 namespace jutta_bt_proto {
@@ -19,24 +19,9 @@ struct Machine {
                                                                                                  name(std::move(name)),
                                                                                                  fileName(std::move(fileName)),
                                                                                                  version(version){};
-
-    std::size_t operator()(const Machine& machine) const {
-        return machine.articleNumber;
-    }
-
-    bool operator==(const Machine& other) const {
-        return articleNumber == other.articleNumber;
-    }
-
-    // NOLINTNEXTLINE (altera-struct-pack-align)
-    struct HashFunction {
-        size_t operator()(const Machine& machine) const {
-            return machine.articleNumber;
-        }
-    };
 } __attribute__((aligned(128)));
 
-std::unordered_set<Machine, Machine::HashFunction> load_machines(const std::filesystem::path& path);
+std::unordered_map<size_t, const Machine> load_machines(const std::filesystem::path& path);
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_proto
 //---------------------------------------------------------------------------

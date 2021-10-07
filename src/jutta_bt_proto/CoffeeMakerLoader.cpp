@@ -8,9 +8,9 @@
 //---------------------------------------------------------------------------
 namespace jutta_bt_proto {
 //---------------------------------------------------------------------------
-std::unordered_set<Machine, Machine::HashFunction> load_machines(const std::filesystem::path& path) {
+std::unordered_map<size_t, const Machine> load_machines(const std::filesystem::path& path) {
     SPDLOG_INFO("Loading machines...");
-    std::unordered_set<Machine, Machine::HashFunction> result;
+    std::unordered_map<size_t, const Machine> result;
     io::CSVReader<4, io::trim_chars<' ', '\t'>, io::no_quote_escape<';'>> in(path);
     // Skip the first line:
     in.next_line();
@@ -19,7 +19,7 @@ std::unordered_set<Machine, Machine::HashFunction> load_machines(const std::file
     std::string fileName;
     uint8_t version = 0;
     while (in.read_row(articleNumber, name, fileName, version)) {
-        result.emplace(articleNumber, std::string{name}, std::string{fileName}, version);
+        result.emplace(std::make_pair(articleNumber, Machine(articleNumber, std::string{name}, std::string{fileName}, version)));
     }
     SPDLOG_INFO("Loaded {} machines.", result.size());
     return result;

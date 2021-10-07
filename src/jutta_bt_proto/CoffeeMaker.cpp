@@ -95,6 +95,15 @@ void CoffeeMaker::parse_man_data(const std::vector<uint8_t>& data) {
     machineProdDateUCHI = to_ymd(data, 12);
     unusedSecond = data[14];
     statusBits = data[15];
+
+    // Load machine:
+    if (!machines.contains(articleNumber)) {
+        SPDLOG_ERROR("Coffee maker with article number '{}' not supported with the given machine files.", articleNumber);
+        // NOLINTNEXTLINE(concurrency-mt-unsafe)
+        exit(-1);
+    }
+    machine = &(machines.at(articleNumber));
+    SPDLOG_INFO("Found machine '{}' Version: {}", machine->name, machine->version);
 }
 
 void CoffeeMaker::parse_rx(const std::vector<uint8_t>& data, uint8_t key) {

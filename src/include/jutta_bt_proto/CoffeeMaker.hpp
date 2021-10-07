@@ -3,10 +3,11 @@
 #include "bt/BLEDevice.hpp"
 #include "jutta_bt_proto/CoffeeMakerLoader.hpp"
 #include <chrono>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <thread>
-#include <unordered_set>
+#include <unordered_map>
 #include <vector>
 #include <bluetooth/sdp.h>
 
@@ -52,7 +53,8 @@ class CoffeeMaker {
     CoffeeMakerState state{CoffeeMakerState::DISCONNECTED};
     std::optional<std::thread> heartbeatThread{std::nullopt};
 
-    const std::unordered_set<Machine, Machine::HashFunction> machines;
+    const std::unordered_map<size_t, const Machine> machines;
+    const Machine* machine{nullptr};
 
     // Manufacturer advertisment data:
     uint8_t key{0};
