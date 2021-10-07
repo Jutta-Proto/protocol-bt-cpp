@@ -197,6 +197,18 @@ The following requirements are required to build this project.
 * The build system is written using [CMake](https://cmake.org/)
 * For managing dependencies in CMake, we are using [conan](https://conan.io/)
 
+### Machine Files
+Since this lib uses the machine files provided by JURA in their Android APK, we have to extract the first.
+For this you have to perform the following steps:
+
+1. Visit the [Google Play](https://play.google.com/store/apps/details?id=ch.toptronic.joe) page for the `J.O.E.® – Jura Operating Experience`.
+2. Copy the page URL.
+3. Use your favorite APK downloader to obtain the latest `J.O.E.® – Jura Operating Experience` APK. For example one could use this page: https://apps.evozi.com/apk-downloader/?id=ch.toptronic.joe
+4. Place it under `src/resources`
+5. Open a terminal under `src/resources`
+6. Execute the `extract_apk.sh` bash script to extract all required files. Example: `./extract_apk.sh myPathToTheJuraJoeApk.apk`
+7. Done
+
 #### Fedora
 To install those dependencies on Fedora, run the following commands:
 ```bash
