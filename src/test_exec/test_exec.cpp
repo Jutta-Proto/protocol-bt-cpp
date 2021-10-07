@@ -24,17 +24,10 @@ int main(int /*argc*/, char** /*argv*/) {
         jutta_bt_proto::CoffeeMaker coffeeMaker(std::string{result->name}, std::string{result->addr});
         coffeeMaker.connect();
         size_t i = 0;
-        // coffeeMaker.restart_coffee_maker();
         while (coffeeMaker.is_connected()) {
-            // coffeeMaker.request_progress();
-            // coffeeMaker.request_status();
-            // coffeeMaker.request_progress();
             coffeeMaker.stay_in_ble();
-            std::this_thread::sleep_for(std::chrono::seconds{2});
+            std::this_thread::sleep_for(std::chrono::seconds{1});
             i++;
-            if (i == 5) {
-                coffeeMaker.request_coffee();
-            }
         }
         std::string s;
         std::cin >> s;

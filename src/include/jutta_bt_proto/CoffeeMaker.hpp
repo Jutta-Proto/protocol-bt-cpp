@@ -92,6 +92,20 @@ class CoffeeMaker {
      * Heartbeat that should be send at least once every ten seconds, so the coffee maker stays connected.
      **/
     void stay_in_ble();
+    /**
+     * Reads from the RX characteristic.
+     **/
+    void read_rx();
+    /**
+     * Sends the given data to the TX characteristic.
+     * Before sending, the data will be encoded.
+     **/
+    void write_tx(const std::vector<uint8_t>& data);
+    /**
+     * Sends the given string to the TX characteristic.
+     * Before sending, the data will be encoded.
+     **/
+    void write_tx(const std::string& s);
     void request_coffee();
 
  private:
@@ -104,6 +118,7 @@ class CoffeeMaker {
     void parse_about_data(const std::vector<uint8_t>& data);
     static void parse_product_progress(const std::vector<uint8_t>& data, uint8_t key);
     static void parse_machine_status(const std::vector<uint8_t>& data, uint8_t key);
+    static void parse_rx(const std::vector<uint8_t>& data, uint8_t key);
     static std::string parse_version(const std::vector<uint8_t>& data, size_t from, size_t to);
     /**
      * Converts the given data to an uint16_t from little endian.

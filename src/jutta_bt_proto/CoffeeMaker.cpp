@@ -24,8 +24,8 @@ RelevantUUIDs::RelevantUUIDs() noexcept {
         to_uuid("5a401528-ab2e-2548-c435-08c300000710", &UPDATE_PRODUCT_CHARACTERISTIC_UUID);
 
         to_uuid("5a401623-ab2e-2548-c435-08c300000710", &UART_SERVICE_UUID);
-        to_uuid("5a401624-ab2e-2548-c435-08c300000710", &UART_TX_CHARACTERISTIC_UUID);
-        to_uuid("5a401625-ab2e-2548-c435-08c300000710", &UART_RX_CHARACTERISTIC_UUID);
+        to_uuid("5a401624-ab2e-2548-c435-08c300000710", &UART_RX_CHARACTERISTIC_UUID);
+        to_uuid("5a401625-ab2e-2548-c435-08c300000710", &UART_TX_CHARACTERISTIC_UUID);
     } catch (const std::exception& e) {
         SPDLOG_ERROR("Loading UUIDS failed with: {}", e.what());
         std::terminate();
@@ -92,6 +92,11 @@ void CoffeeMaker::parse_man_data(const std::vector<uint8_t>& data) {
     statusBits = data[15];
 }
 
+void CoffeeMaker::parse_rx(const std::vector<uint8_t>& data, uint8_t key) {
+    std::vector<std::uint8_t> actData = bt::encDecBytes(data, key);
+    SPDLOG_INFO("Read from RX: {}", to_hex_string(actData));
+}
+
 uint16_t CoffeeMaker::to_uint16_t_little_endian(const std::vector<uint8_t>& data, size_t offset) {
     return (static_cast<uint16_t>(data[offset + 1]) << 8) | static_cast<uint16_t>(data[offset]);
 }
@@ -116,6 +121,8 @@ void CoffeeMaker::on_characteristic_read(const std::vector<uint8_t>& data, const
     }  // Product progress:
     else if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.PRODUCT_PROGRESS_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
         parse_product_progress(data, key);
+    } else if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.UART_RX_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
+        parse_rx(data, key);
     } else {
         // TODO print
     }
@@ -130,6 +137,19 @@ void CoffeeMaker::request_progress() {
 
 void CoffeeMaker::request_about_info() {
     bleDevice.read_characteristic(RELEVANT_UUIDS.ABOUT_MACHINE_CHARACTERISTIC_UUID);
+}
+
+void CoffeeMaker::read_rx() {
+    bleDevice.read_characteristic(RELEVANT_UUIDS.UART_RX_CHARACTERISTIC_UUID);
+}
+
+void CoffeeMaker::write_tx(const std::string& s) {
+    const std::vector<uint8_t> data(s.begin(), s.end());
+    write_tx(data);
+}
+
+void CoffeeMaker::write_tx(const std::vector<uint8_t>& data) {
+    write(RELEVANT_UUIDS.UART_TX_CHARACTERISTIC_UUID, data, true, false);
 }
 
 bool CoffeeMaker::write(const uuid_t& characteristic, const std::vector<uint8_t>& data, bool encode, bool overrideKey) {
