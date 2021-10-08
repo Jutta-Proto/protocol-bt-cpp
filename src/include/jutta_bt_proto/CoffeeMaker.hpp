@@ -11,7 +11,6 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
-#include <bluetooth/sdp.h>
 
 //---------------------------------------------------------------------------
 namespace jutta_bt_proto {
@@ -124,7 +123,11 @@ class CoffeeMaker {
     /**
      * Returns the CoffeeMakerState indicating the current connection state.
      **/
-    CoffeeMakerState get_state();
+    [[nodiscard]] CoffeeMakerState get_state() const;
+    [[nodiscard]] const std::shared_ptr<Joe>& get_joe() const;
+    [[nodiscard]] const ManufacturerData& get_man_data() const;
+    [[nodiscard]] const AboutData& get_about_data() const;
+    [[nodiscard]] const std::vector<const Alert*>& get_alerts() const;
     /**
      * Performs a gracefull shutdown with rinsing.
      **/
@@ -160,6 +163,7 @@ class CoffeeMaker {
      **/
     void write_tx(const std::string& s);
     void request_coffee();
+    void request_coffee(const Product& product);
 
  private:
     void set_state(CoffeeMakerState state);

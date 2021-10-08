@@ -29,16 +29,20 @@ int main(int /*argc*/, char** /*argv*/) {
                 SPDLOG_INFO("New alert '{}' with type '{}'.", alert->name, alert->type);
             }
         });
-        coffeeMaker.connect();
-        for (size_t i = 0; i < 100; i++) {
-            std::this_thread::sleep_for(std::chrono::seconds{1});
-            coffeeMaker.request_status();
+        if (coffeeMaker.connect()) {
+            size_t i = 0;
+            while (coffeeMaker.get_state() == jutta_bt_proto::CONNECTED) {
+                std::this_thread::sleep_for(std::chrono::seconds{1});
+                if (++i == 10) {
+                    coffeeMaker.request_coffee(coffeeMaker.get_joe()->products[1]);
+                }
+            }
         }
         coffeeMaker.disconnect();
         SPDLOG_INFO("Disconnected. Waiting 5 seconds before reconnecting.");
         std::this_thread::sleep_for(std::chrono::seconds{5});
-        // std::string s;
-        // std::cin >> s;
+        std::string s;
+        std::cin >> s;
     }
     return 0;
 }

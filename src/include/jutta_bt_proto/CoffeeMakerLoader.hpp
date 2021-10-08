@@ -33,6 +33,8 @@ struct ItemsOption {
     std::string argument;
     std::string defaultValue;
     std::vector<Item> items;
+
+    void to_bt_command(std::vector<std::string>& command) const;
 } __attribute__((aligned(128)));
 
 struct MinMaxOption {
@@ -41,6 +43,8 @@ struct MinMaxOption {
     uint8_t min;
     uint8_t max;
     uint8_t step;
+
+    void to_bt_command(std::vector<std::string>& command) const;
 } __attribute__((aligned(64)));
 
 struct Product {
@@ -51,6 +55,8 @@ struct Product {
     std::optional<ItemsOption> temperature;
     std::optional<MinMaxOption> waterAmount;
     std::optional<MinMaxOption> milkFoamAmount;
+
+    [[nodiscard]] std::string to_bt_command() const;
 } __attribute__((aligned(128)));
 
 struct Alert {

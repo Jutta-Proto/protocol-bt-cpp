@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <thread>
 #include <bluetooth/sdp.h>
 #include <spdlog/spdlog.h>
@@ -235,10 +236,16 @@ void CoffeeMaker::shutdown() {
 
 void CoffeeMaker::request_coffee() {
     SPDLOG_DEBUG("Requesting coffee...");
-    static const std::string commandHexStr = "0003000428000002000100000000002A";
+    static const std::string commandHexStr = "00030004280000020001000000000000";
     // static const std::string commandHexStr = "77e93dd55381d3dba32bfa98a4a3faf9";  // Decoded: 2A03000414000001000100000000002A
     static const std::vector<uint8_t> command = from_hex_string(commandHexStr);
     write(RELEVANT_UUIDS.START_PRODUCT_CHARACTERISTIC_UUID, command, true, false);
+}
+
+void CoffeeMaker::request_coffee(const Product& product) {
+    const std::string commandHexStr = product.to_bt_command();
+    static const std::vector<uint8_t> command = from_hex_string(commandHexStr);
+    write(RELEVANT_UUIDS.START_PRODUCT_CHARACTERISTIC_UUID, command, true, true);
 }
 
 void CoffeeMaker::stay_in_ble() {
@@ -299,9 +306,15 @@ void CoffeeMaker::disconnect() {
     }
 }
 
-CoffeeMakerState CoffeeMaker::get_state() {
-    return state;
-}
+CoffeeMakerState CoffeeMaker::get_state() const { return state; }
+
+const std::shared_ptr<Joe>& CoffeeMaker::get_joe() const { return joe; }
+
+const ManufacturerData& CoffeeMaker::get_man_data() const { return manData; }
+
+const AboutData& CoffeeMaker::get_about_data() const { return aboutData; }
+
+const std::vector<const Alert*>& CoffeeMaker::get_alerts() const { return alerts; }
 
 void CoffeeMaker::set_state(CoffeeMakerState state) {
     if (state != this->state) {

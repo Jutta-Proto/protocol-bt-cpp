@@ -1,17 +1,79 @@
 #include "jutta_bt_proto/CoffeeMakerLoader.hpp"
 #include "io/csv.hpp"
+#include "jutta_bt_proto/Utils.hpp"
 #include "logger/Logger.hpp"
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <sstream>
+#include <string>
+#include <vector>
 #include <spdlog/spdlog.h>
 #include <tinyxml2.h>
 
 //---------------------------------------------------------------------------
 namespace jutta_bt_proto {
 //---------------------------------------------------------------------------
+void ItemsOption::to_bt_command(std::vector<std::string>& command) const {
+    if (argument[0] == 'F') {
+        std::string offsetStr = argument.substr(1);
+        std::istringstream iss(offsetStr);
+        size_t offset = 0;
+        iss >> offset;
+        command[offset - 1] = defaultValue;
+    } else {
+        SPDLOG_ERROR("Invalid argument when converting to a BT command '{}'", argument);
+    }
+}
+
+void MinMaxOption::to_bt_command(std::vector<std::string>& command) const {
+    if (argument[0] == 'F') {
+        std::string offsetStr = argument.substr(1);
+        std::istringstream iss(offsetStr);
+        size_t offset = 0;
+        iss >> offset;
+        uint8_t v = value / step;
+        command[offset - 1] = to_hex_string(std::vector<uint8_t>{v});
+    } else {
+        SPDLOG_ERROR("Invalid argument when converting to a BT command '{}'", argument);
+    }
+}
+
+std::string Product::to_bt_command() const {
+    std::vector<std::string> command;
+    command.resize(17);
+    for (std::string& s : command) {
+        s = "00";
+    }
+    command[0] = code;
+
+    if (strength) {
+        strength->to_bt_command(command);
+    }
+
+    if (temperature) {
+        temperature->to_bt_command(command);
+    }
+
+    if (waterAmount) {
+        waterAmount->to_bt_command(command);
+    }
+
+    if (milkFoamAmount) {
+        milkFoamAmount->to_bt_command(command);
+    }
+
+    // TODO: Add GRINDER_FREENESS
+
+    std::string result;
+    for (const std::string& s : command) {
+        result += s;
+    }
+    return "00" + result.substr(0, 30);
+}
+
 std::unordered_map<size_t, const Machine> load_machines(const std::filesystem::path& path) {
     SPDLOG_INFO("Loading machines...");
     std::unordered_map<size_t, const Machine> result;
