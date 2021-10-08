@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <thread>
 #include <bluetooth/sdp.h>
 #include <spdlog/spdlog.h>
@@ -64,9 +65,18 @@ std::string CoffeeMaker::parse_version(const std::vector<uint8_t>& data, size_t 
 }
 
 void CoffeeMaker::parse_about_data(const std::vector<uint8_t>& data) {
-    blueFrogVersion = parse_version(data, 27, 34);
-    coffeeMachineVersion = parse_version(data, 35, 50);
-    SPDLOG_DEBUG("Found about data. BlueFrog Version: {} Coffee Machine Version: {}", blueFrogVersion, coffeeMachineVersion);
+    std::string blueFrogVersion = parse_version(data, 27, 34);
+    std::string coffeeMachineVersion = parse_version(data, 35, 50);
+    if (blueFrogVersion != aboutData.blueFrogVersion || coffeeMachineVersion != aboutData.coffeeMachineVersion) {
+        aboutData.blueFrogVersion = std::move(blueFrogVersion);
+        aboutData.coffeeMachineVersion = std::move(coffeeMachineVersion);
+        SPDLOG_DEBUG("Found new about data. BlueFrog Version: {} Coffee Machine Version: {}", aboutData.blueFrogVersion, aboutData.coffeeMachineVersion);
+
+        // Invoke the about data event handler:
+        if (aboutDataChangedEventHandler) {
+            (*aboutDataChangedEventHandler)(aboutData);
+        }
+    }
 }
 
 void CoffeeMaker::parse_machine_status(const std::vector<uint8_t>& data, uint8_t key) {
@@ -74,6 +84,7 @@ void CoffeeMaker::parse_machine_status(const std::vector<uint8_t>& data, uint8_t
         return;
     }
 
+    std::vector<const Alert*> newAlerts;
     std::vector<std::uint8_t> alertVec = bt::encDecBytes(data, key);
     for (size_t i = 0; i < (alertVec.size() - 1) << 3; i++) {
         size_t offsetAbs = (i >> 3) + 1;
@@ -81,9 +92,19 @@ void CoffeeMaker::parse_machine_status(const std::vector<uint8_t>& data, uint8_t
         if ((alertVec[offsetAbs] >> offsetByte) & 0b1) {
             for (const Alert& alert : joe->alerts) {
                 if (alert.bit == i) {
-                    SPDLOG_INFO("ALERT '{}' set.", alert.name);
+                    newAlerts.push_back(&alert);
                 }
             }
+        }
+    }
+
+    if (alerts != newAlerts) {
+        alerts.clear();
+        alerts.insert(alerts.end(), newAlerts.begin(), newAlerts.end());
+
+        // Invoke the alerts event handler:
+        if (alertsChangedEventHandler) {
+            (*alertsChangedEventHandler)(alerts);
         }
     }
 }
@@ -97,26 +118,37 @@ void CoffeeMaker::analyze_man_data() {
 }
 
 void CoffeeMaker::parse_man_data(const std::vector<uint8_t>& data) {
-    key = data[0];
-    bfMajVer = data[1];
-    bfMinVer = data[2];
-    articleNumber = to_uint16_t_little_endian(data, 4);
-    machineNumber = to_uint16_t_little_endian(data, 6);
-    serialNumber = to_uint16_t_little_endian(data, 8);
-    machineProdDate = to_ymd(data, 10);
-    machineProdDateUCHI = to_ymd(data, 12);
-    unusedSecond = data[14];
-    statusBits = data[15];
+    manData.key = data[0];
+    manData.bfMajVer = data[1];
+    manData.bfMinVer = data[2];
+    manData.articleNumber = to_uint16_t_little_endian(data, 4);
+    manData.machineNumber = to_uint16_t_little_endian(data, 6);
+    manData.serialNumber = to_uint16_t_little_endian(data, 8);
+    manData.machineProdDate = to_ymd(data, 10);
+    manData.machineProdDateUCHI = to_ymd(data, 12);
+    manData.unusedSecond = data[14];
+    manData.statusBits = data[15];
+
+    // Invoke the manufacturer data event handler:
+    if (manDataChangedEventHandler) {
+        (*manDataChangedEventHandler)(manData);
+    }
 
     // Load machine:
-    if (!machines.contains(articleNumber)) {
-        SPDLOG_ERROR("Coffee maker with article number '{}' not supported with the given machine files.", articleNumber);
+    if (!machines.contains(manData.articleNumber)) {
+        SPDLOG_ERROR("Coffee maker with article number '{}' not supported with the given machine files.", manData.articleNumber);
         // NOLINTNEXTLINE(concurrency-mt-unsafe)
         exit(-1);
     }
-    const Machine* machine = &(machines.at(articleNumber));
+    const Machine* machine = &(machines.at(manData.articleNumber));
     joe = load_joe(machine);
+    alerts.clear();
     SPDLOG_INFO("Found machine '{}' Version: {} with {} products.", machine->name, machine->version, joe->products.size());
+
+    // Invoke the JOE event handler:
+    if (joeChangedEventHandler) {
+        (*joeChangedEventHandler)(joe);
+    }
 }
 
 void CoffeeMaker::parse_rx(const std::vector<uint8_t>& data, uint8_t key) {
@@ -136,7 +168,7 @@ std::chrono::year_month_day CoffeeMaker::to_ymd(const std::vector<uint8_t>& data
 void CoffeeMaker::on_characteristic_read(const std::vector<uint8_t>& data, const uuid_t& uuid) {
     std::array<char, MAX_LEN_UUID_STR + 1> uuidStr{};
     gattlib_uuid_to_string(&uuid, uuidStr.data(), uuidStr.size());
-    SPDLOG_INFO("Received {} bytes of data from characteristic '{}'.", data.size(), uuidStr.data());
+    SPDLOG_TRACE("Received {} bytes of data from characteristic '{}'.", data.size(), uuidStr.data());
 
     // About UUID:
     if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.ABOUT_MACHINE_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
@@ -144,12 +176,15 @@ void CoffeeMaker::on_characteristic_read(const std::vector<uint8_t>& data, const
     }
     // Machine status:
     else if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.MACHINE_STATUS_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
-        parse_machine_status(data, key);
-    }  // Product progress:
+        parse_machine_status(data, manData.key);
+    }
+    // Product progress:
     else if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.PRODUCT_PROGRESS_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
-        parse_product_progress(data, key);
-    } else if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.UART_RX_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
-        parse_rx(data, key);
+        parse_product_progress(data, manData.key);
+    }
+    // RX:
+    else if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.UART_RX_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
+        parse_rx(data, manData.key);
     } else {
         // TODO print
     }
@@ -182,24 +217,24 @@ void CoffeeMaker::write_tx(const std::vector<uint8_t>& data) {
 bool CoffeeMaker::write(const uuid_t& characteristic, const std::vector<uint8_t>& data, bool encode, bool overrideKey) {
     std::vector<uint8_t> encodedData = data;
     if (encode) {
-        encodedData[0] = key;
+        encodedData[0] = manData.key;
         if (overrideKey) {
-            encodedData[encodedData.size() - 1] = key;
+            encodedData[encodedData.size() - 1] = manData.key;
         }
-        encodedData = bt::encDecBytes(encodedData, key);
+        encodedData = bt::encDecBytes(encodedData, manData.key);
     }
     SPDLOG_TRACE("Wrote: {}", to_hex_string(encodedData));
     return bleDevice.write(characteristic, encodedData);
 }
 
 void CoffeeMaker::shutdown() {
-    SPDLOG_INFO("Shutting down the coffee maker...");
+    SPDLOG_DEBUG("Shutting down the coffee maker...");
     static const std::vector<uint8_t> command{0x00, 0x46, 0x02};
     write(RELEVANT_UUIDS.P_MODE_CHARACTERISTIC_UUID, command, true, false);
 }
 
 void CoffeeMaker::request_coffee() {
-    SPDLOG_INFO("Requesting coffee...");
+    SPDLOG_DEBUG("Requesting coffee...");
     static const std::string commandHexStr = "0003000428000002000100000000002A";
     // static const std::string commandHexStr = "77e93dd55381d3dba32bfa98a4a3faf9";  // Decoded: 2A03000414000001000100000000002A
     static const std::vector<uint8_t> command = from_hex_string(commandHexStr);
@@ -207,41 +242,49 @@ void CoffeeMaker::request_coffee() {
 }
 
 void CoffeeMaker::stay_in_ble() {
-    SPDLOG_INFO("Sending stay in BLE mode...");
+    SPDLOG_DEBUG("Sending stay in BLE mode...");
     static const std::vector<uint8_t> command{0x00, 0x7F, 0x80};
     write(RELEVANT_UUIDS.P_MODE_CHARACTERISTIC_UUID, command, true, false);
 }
 
 void CoffeeMaker::on_connected() {
     // Ensure we have the key for deobfuscation ready:
-    analyze_man_data();
+    const std::vector<uint8_t>& manData = bleDevice.get_mam_data();
+    if (manData.empty()) {
+        SPDLOG_WARN("Failed to connect. Invalid manufacturer data.");
+        disconnect();
+        return;
+    }
+    parse_man_data(manData);
+
     // Send the initial hearbeat:
     stay_in_ble();
+
     // Request basic information:
     request_about_info();
+
+    // Start the heartbeat thread:
+    assert(!heartbeatThread);
+    heartbeatThread = std::make_optional<std::thread>(&CoffeeMaker::heartbeat_run, this);
+    SPDLOG_INFO("Connected.");
 }
 
 void CoffeeMaker::on_disconnected() {}
 
 bool CoffeeMaker::connect() {
-    state = CoffeeMakerState::CONNECTING;
+    set_state(CoffeeMakerState::CONNECTING);
     if (bleDevice.connect()) {
-        state = CoffeeMakerState::CONNECTED;
-
-        // Start the heartbeat thread:
-        assert(!heartbeatThread);
-        heartbeatThread = std::make_optional<std::thread>(&CoffeeMaker::heartbeat_run, this);
-        SPDLOG_INFO("Connected.");
+        set_state(CoffeeMakerState::CONNECTED);
         return true;
     }
-    state = CoffeeMakerState::DISCONNECTED;
+    set_state(CoffeeMakerState::DISCONNECTED);
     SPDLOG_WARN("Failed to connect.");
     return false;
 }
 
 void CoffeeMaker::disconnect() {
     if (state == CoffeeMakerState::CONNECTING || state == CoffeeMakerState::CONNECTED) {
-        state = CoffeeMakerState::DISCONNECTING;
+        set_state(CoffeeMakerState::CONNECTING);
 
         // Send the disconnect command:
         static const std::vector<uint8_t> command{0x00, 0x7F, 0x81};
@@ -251,7 +294,7 @@ void CoffeeMaker::disconnect() {
         assert(heartbeatThread);
         heartbeatThread->join();
         heartbeatThread = std::nullopt;
-        state = CoffeeMakerState::DISCONNECTED;
+        set_state(CoffeeMakerState::DISCONNECTED);
         SPDLOG_INFO("Disconnected.");
     }
 }
@@ -260,14 +303,37 @@ CoffeeMakerState CoffeeMaker::get_state() {
     return state;
 }
 
+void CoffeeMaker::set_state(CoffeeMakerState state) {
+    if (state != this->state) {
+        this->state = state;
+        // Invoke the state event handler:
+        if (stateChangedEventHandler) {
+            (*stateChangedEventHandler)(this->state);
+        }
+    }
+}
+
 void CoffeeMaker::heartbeat_run() {
     SPDLOG_INFO("Heartbeat thread started.");
     while (state == CoffeeMakerState::CONNECTED || state == CoffeeMakerState::CONNECTING) {
         stay_in_ble();
+        request_status();
         std::this_thread::sleep_for(std::chrono::seconds{1});
     }
     SPDLOG_INFO("Heartbeat thread ready to be joined.");
 }
+
+void CoffeeMaker::set_state_changed_event_handler(StateChangedEventHandler handler) { stateChangedEventHandler = std::make_unique<StateChangedEventHandler>(std::move(handler)); }
+void CoffeeMaker::set_man_data_changed_event_handler(ManDataChangedEventHandler handler) { manDataChangedEventHandler = std::make_unique<ManDataChangedEventHandler>(std::move(handler)); }
+void CoffeeMaker::set_about_data_changed_event_handler(AboutDataChangedEventHandler handler) { aboutDataChangedEventHandler = std::make_unique<AboutDataChangedEventHandler>(std::move(handler)); }
+void CoffeeMaker::set_joe_changed_event_handler(JoeChangedEventHandler handler) { joeChangedEventHandler = std::make_unique<JoeChangedEventHandler>(std::move(handler)); }
+void CoffeeMaker::set_alerts_changed_event_handler(AlertsChangedEventHandler handler) { alertsChangedEventHandler = std::make_unique<AlertsChangedEventHandler>(std::move(handler)); }
+
+void CoffeeMaker::clear_state_changed_event_handler() { stateChangedEventHandler = nullptr; }
+void CoffeeMaker::clear_man_data_changed_event_handler() { manDataChangedEventHandler = nullptr; }
+void CoffeeMaker::clear_about_data_changed_event_handler() { aboutDataChangedEventHandler = nullptr; }
+void CoffeeMaker::clear_joe_changed_event_handler() { joeChangedEventHandler = nullptr; }
+void CoffeeMaker::clear_alerts_changed_event_handler() { alertsChangedEventHandler = nullptr; }
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_proto
 //---------------------------------------------------------------------------

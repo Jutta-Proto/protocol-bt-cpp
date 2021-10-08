@@ -57,7 +57,7 @@ struct Alert {
     size_t bit;
     std::string name;
     std::string type;
-} __attribute__((aligned(64)));
+} __attribute__((aligned(128)));
 
 struct Joe {
     std::string dated;

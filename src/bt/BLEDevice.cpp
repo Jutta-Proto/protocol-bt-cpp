@@ -70,7 +70,7 @@ bool BLEDevice::connect() {
         }
         return false;
     }
-    SPDLOG_INFO("Discovered {} services.", serviceCount);
+    SPDLOG_DEBUG("Discovered {} services.", serviceCount);
     SPDLOG_DEBUG("BLEDevice connected.");
     gattlib_register_on_disconnect(connection, &BLEDevice::on_disconnected, this);
     gattlib_register_notification(connection, &BLEDevice::on_notification, this);
@@ -90,6 +90,11 @@ bool BLEDevice::is_connected() const {
 }
 
 void BLEDevice::read_characteristic(const uuid_t& characteristic) {
+    if (!connected) {
+        SPDLOG_WARN("Skipping read. Not connected.");
+        return;
+    }
+
     uuid_t uuid = characteristic;
     std::array<char, MAX_LEN_UUID_STR + 1> uuidStr{};
     gattlib_uuid_to_string(&uuid, uuidStr.data(), uuidStr.size());
@@ -104,7 +109,7 @@ void BLEDevice::read_characteristic(const uuid_t& characteristic) {
     const std::vector<uint8_t> data = to_vec(buffer, bufLen);
     // NOLINTNEXTLINE (cppcoreguidelines-pro-bounds-pointer-arithmetic)
     onCharacteristicRead(data, characteristic);
-    SPDLOG_DEBUG("Read {} bytes from '{}'.", bufLen, uuidStr.data());
+    SPDLOG_TRACE("Read {} bytes from '{}'.", bufLen, uuidStr.data());
 }
 
 void BLEDevice::read_characteristics() {
@@ -126,11 +131,15 @@ void BLEDevice::read_characteristics() {
 }
 
 bool BLEDevice::write(const uuid_t& characteristic, const std::vector<uint8_t>& data) {
+    if (!connected) {
+        SPDLOG_WARN("Skipping write. Not connected.");
+        return false;
+    }
     uuid_t uuid = characteristic;
     std::array<char, MAX_LEN_UUID_STR + 1> uuidStr{};
     gattlib_uuid_to_string(&uuid, uuidStr.data(), uuidStr.size());
     if (gattlib_write_char_by_uuid(connection, &uuid, data.data(), data.size()) == GATTLIB_SUCCESS) {
-        SPDLOG_DEBUG("Wrote {} byte to characteristic '{}'.", data.size(), uuidStr.data());
+        SPDLOG_TRACE("Wrote {} byte to characteristic '{}'.", data.size(), uuidStr.data());
         return true;
     }
     SPDLOG_ERROR("Failed to write to characteristic '{}'!", uuidStr.data());

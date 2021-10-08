@@ -4,6 +4,7 @@
 #include "jutta_bt_proto/CoffeeMakerLoader.hpp"
 #include <chrono>
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -45,19 +46,7 @@ enum CoffeeMakerState {
     DISCONNECTING
 };
 
-class CoffeeMaker {
- public:
-    static const RelevantUUIDs RELEVANT_UUIDS;
-
- private:
-    bt::BLEDevice bleDevice;
-    CoffeeMakerState state{CoffeeMakerState::DISCONNECTED};
-    std::optional<std::thread> heartbeatThread{std::nullopt};
-
-    const std::unordered_map<size_t, const Machine> machines;
-    std::shared_ptr<Joe> joe{nullptr};
-
-    // Manufacturer advertisment data:
+struct ManufacturerData {
     uint8_t key{0};
     uint8_t bfMajVer{0};
     uint8_t bfMinVer{0};
@@ -68,10 +57,41 @@ class CoffeeMaker {
     std::chrono::year_month_day machineProdDateUCHI{};
     uint8_t unusedSecond{0};
     uint8_t statusBits{0};
+} __attribute__((aligned(32)));
 
-    // About data:
+struct AboutData {
     std::string blueFrogVersion{};
     std::string coffeeMachineVersion{};
+} __attribute__((aligned(64)));
+
+class CoffeeMaker {
+ public:
+    static const RelevantUUIDs RELEVANT_UUIDS;
+
+    using StateChangedEventHandler = std::function<void(const CoffeeMakerState&)>;
+    using ManDataChangedEventHandler = std::function<void(const ManufacturerData&)>;
+    using AboutDataChangedEventHandler = std::function<void(const AboutData&)>;
+    using JoeChangedEventHandler = std::function<void(const std::shared_ptr<Joe>&)>;
+    using AlertsChangedEventHandler = std::function<void(const std::vector<const Alert*>&)>;
+
+ private:
+    bt::BLEDevice bleDevice;
+    CoffeeMakerState state{CoffeeMakerState::DISCONNECTED};
+    std::optional<std::thread> heartbeatThread{std::nullopt};
+
+    const std::unordered_map<size_t, const Machine> machines;
+
+    std::shared_ptr<Joe> joe{nullptr};
+    ManufacturerData manData{};
+    AboutData aboutData{};
+    std::vector<const Alert*> alerts{};
+
+    // Event handler:
+    std::unique_ptr<StateChangedEventHandler> stateChangedEventHandler{nullptr};
+    std::unique_ptr<ManDataChangedEventHandler> manDataChangedEventHandler{nullptr};
+    std::unique_ptr<AboutDataChangedEventHandler> aboutDataChangedEventHandler{nullptr};
+    std::unique_ptr<JoeChangedEventHandler> joeChangedEventHandler{nullptr};
+    std::unique_ptr<AlertsChangedEventHandler> alertsChangedEventHandler{nullptr};
 
  public:
     explicit CoffeeMaker(std::string&& name, std::string&& addr);
@@ -80,6 +100,18 @@ class CoffeeMaker {
     CoffeeMaker& operator=(CoffeeMaker&&) = delete;
     CoffeeMaker& operator=(const CoffeeMaker&) = delete;
     ~CoffeeMaker() = default;
+
+    void set_state_changed_event_handler(StateChangedEventHandler handler);
+    void set_man_data_changed_event_handler(ManDataChangedEventHandler handler);
+    void set_about_data_changed_event_handler(AboutDataChangedEventHandler handler);
+    void set_joe_changed_event_handler(JoeChangedEventHandler handler);
+    void set_alerts_changed_event_handler(AlertsChangedEventHandler handler);
+
+    void clear_state_changed_event_handler();
+    void clear_man_data_changed_event_handler();
+    void clear_about_data_changed_event_handler();
+    void clear_joe_changed_event_handler();
+    void clear_alerts_changed_event_handler();
 
     /**
      * Connects to the bluetooth device and returns true on success.
@@ -130,6 +162,7 @@ class CoffeeMaker {
     void request_coffee();
 
  private:
+    void set_state(CoffeeMakerState state);
     /**
      * Analyzes the manufacturer specific data from the advertisement send by the coffee maker.
      * Extracts the encryption key, machine number, serial number, ...
