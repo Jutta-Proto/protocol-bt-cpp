@@ -42,3 +42,4 @@ compile_commands.json
 .vscode/
 src/resources/*
 !src/resources/extract_apk.sh
+!src/resources/CMakeLists.txt
