@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 if(JUTTA_BT_PROTO_BUILD_TEST_EXEC)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
     set(EXECUTABLE_NAME "test_exec")
     set(EXECUTABLE_MAIN "test_exec.cpp")
 

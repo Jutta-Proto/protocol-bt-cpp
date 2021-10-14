@@ -54,7 +54,7 @@ CoffeeMaker::CoffeeMaker(std::string&& name, std::string&& addr) : bleDevice(
                                                                        [this]() { this->on_connected(); },
                                                                        [this]() { this->on_disconnected(); },
                                                                        [this](const std::vector<uint8_t>& data, const uuid_t& uuid) { this->on_characteristic_read(data, uuid); }),
-                                                                   machines(load_machines("../resources/machinefiles/JOE_MACHINES.TXT")) {}
+                                                                   machines(load_machines("machinefiles/JOE_MACHINES.TXT")) {}
 
 std::string CoffeeMaker::parse_version(const std::vector<uint8_t>& data, size_t from, size_t to) {
     std::string result;
