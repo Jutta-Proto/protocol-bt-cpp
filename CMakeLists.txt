@@ -31,9 +31,9 @@ jutta_bt_proto_option(JUTTA_BT_PROTO_STATIC_ANALYZE "Set to ON to enable the GCC
 jutta_bt_proto_option(JUTTA_BT_PROTO_ENABLE_LINTING "Set to ON to enable clang linting. If enabled, JUTTA_BT_PROTO_STATIC_ANALYZE has to be disabled." OFF)
 message(STATUS "=======================================================")
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
 include(sanitizer)
 include(gcc_analyze)
