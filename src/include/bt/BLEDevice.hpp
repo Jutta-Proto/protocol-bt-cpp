@@ -1,6 +1,5 @@
 #pragma once
 
-#include "gattlib.h"
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -9,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <bluetooth/sdp.h>
+#include <gattlib.h>
 
 //---------------------------------------------------------------------------
 namespace bt {
