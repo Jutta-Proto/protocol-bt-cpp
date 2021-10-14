@@ -8,7 +8,11 @@
 #include <string>
 #include <vector>
 #include <bluetooth/sdp.h>
-#include <gattlib.h>
+
+#ifndef __GATTLIB_H__
+using gatt_connection_t = struct _gatt_connection_t;
+using gattlib_primary_service_t = struct gattlib_primary_service_t;
+#endif
 
 //---------------------------------------------------------------------------
 namespace bt {

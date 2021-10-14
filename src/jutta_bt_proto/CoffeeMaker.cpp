@@ -1,6 +1,7 @@
-#include "jutta_bt_proto/CoffeeMaker.hpp"
+#include <gattlib.h>  // Include first since we have some structs forward declared
+
 #include "bt/ByteEncDecoder.hpp"
-#include "gattlib.h"
+#include "jutta_bt_proto/CoffeeMaker.hpp"
 #include "jutta_bt_proto/CoffeeMakerLoader.hpp"
 #include "jutta_bt_proto/Utils.hpp"
 #include "logger/Logger.hpp"

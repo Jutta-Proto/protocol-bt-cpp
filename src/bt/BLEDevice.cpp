@@ -1,6 +1,7 @@
+#include <gattlib.h>  // Include first since we have some structs forward declared
+
 #include "bt/BLEDevice.hpp"
 #include "bt/ByteEncDecoder.hpp"
-#include "gattlib.h"
 #include <array>
 #include <cassert>
 #include <chrono>

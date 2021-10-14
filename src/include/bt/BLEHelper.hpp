@@ -3,7 +3,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <gattlib.h>
 
 //---------------------------------------------------------------------------
 namespace bt {
