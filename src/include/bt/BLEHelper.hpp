@@ -15,7 +15,7 @@ struct ScanArgs {
     std::string addr;
 } __attribute__((aligned(128)));
 
-std::shared_ptr<ScanArgs> scan_for_device(std::string&& name, bool* canceled);
+std::shared_ptr<ScanArgs> scan_for_device(std::string&& name, const bool* canceled);
 //---------------------------------------------------------------------------
 }  // namespace bt
 //---------------------------------------------------------------------------

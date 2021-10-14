@@ -1,7 +1,9 @@
 #include "bt/BLEHelper.hpp"
+#include <chrono>
 #include <logger/Logger.hpp>
 #include <memory>
 #include <optional>
+#include <thread>
 #include <gattlib.h>
 #include <spdlog/spdlog.h>
 
@@ -24,7 +26,7 @@ void on_device_discovered(void* adapter, const char* addr, const char* name, voi
     }
 }
 
-std::shared_ptr<ScanArgs> scan_for_device(std::string&& name, bool* canceled) {
+std::shared_ptr<ScanArgs> scan_for_device(std::string&& name, const bool* canceled) {
     SPDLOG_DEBUG("Scanning for devices...");
     void* adapter = nullptr;
     if (gattlib_adapter_open(nullptr, &adapter)) {
@@ -42,14 +44,22 @@ std::shared_ptr<ScanArgs> scan_for_device(std::string&& name, bool* canceled) {
         gattlib_adapter_close(adapter);
         return nullptr;
     }
-    while (!args->doneMutex.try_lock()) {
-        if (*canceled) {
-            gattlib_adapter_scan_disable(adapter);
+    while (true) {
+        if (args->doneMutex.try_lock()) {
+            args->doneMutex.unlock();
             break;
         }
+        if (*canceled) {
+            SPDLOG_DEBUG("Stopping scann...");
+            gattlib_adapter_scan_disable(adapter);
+            // Wait for the scann to finish:
+            args->doneMutex.lock();
+            args->doneMutex.unlock();
+            break;
+        }
+        SPDLOG_DEBUG("Scann stopped.");
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
-    args->doneMutex.lock();
-    args->doneMutex.unlock();
     gattlib_adapter_close(adapter);
     SPDLOG_INFO("Scan stoped");
     if (args->success) {
