@@ -24,7 +24,7 @@ void on_device_discovered(void* adapter, const char* addr, const char* name, voi
     }
 }
 
-std::shared_ptr<ScanArgs> scan_for_device(std::string&& name) {
+std::shared_ptr<ScanArgs> scan_for_device(std::string&& name, bool* canceled) {
     SPDLOG_DEBUG("Scanning for devices...");
     void* adapter = nullptr;
     if (gattlib_adapter_open(nullptr, &adapter)) {
@@ -41,6 +41,12 @@ std::shared_ptr<ScanArgs> scan_for_device(std::string&& name) {
         SPDLOG_ERROR("Bluetooth scan failed.");
         gattlib_adapter_close(adapter);
         return nullptr;
+    }
+    while (!args->doneMutex.try_lock()) {
+        if (*canceled) {
+            gattlib_adapter_scan_disable(adapter);
+            break;
+        }
     }
     args->doneMutex.lock();
     args->doneMutex.unlock();

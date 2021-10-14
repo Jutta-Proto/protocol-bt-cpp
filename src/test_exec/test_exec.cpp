@@ -15,7 +15,8 @@ int main(int /*argc*/, char** /*argv*/) {
     SPDLOG_INFO("Starting test exec...");
     while (true) {
         SPDLOG_INFO("Scanning...");
-        std::shared_ptr<bt::ScanArgs> result = bt::scan_for_device("TT214H BlueFrog");
+        bool canceled = false;
+        std::shared_ptr<bt::ScanArgs> result = bt::scan_for_device("TT214H BlueFrog", &canceled);
         if (!result) {
             SPDLOG_INFO("No coffee maker found. Sleeping...");
             std::this_thread::sleep_for(std::chrono::seconds{2});
