@@ -166,7 +166,7 @@ void load_alerts(std::vector<Alert>* alerts, tinyxml2::XMLElement* joe) {
 
 std::shared_ptr<Joe> load_joe(const Machine* machine) {
     tinyxml2::XMLDocument doc;
-    std::string path = "../resources/machinefiles/" + machine->fileName + ".xml";
+    std::string path = "machinefiles/" + machine->fileName + ".xml";
     SPDLOG_INFO("Loading JOE from '{}'...", path);
     assert(doc.LoadFile(path.c_str()) == tinyxml2::XML_SUCCESS);
     tinyxml2::XMLElement* joe = doc.FirstChildElement("JOE");
