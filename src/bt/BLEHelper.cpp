@@ -3,6 +3,7 @@
 #include <logger/Logger.hpp>
 #include <memory>
 #include <optional>
+#include <regex>
 #include <thread>
 #include <gattlib.h>
 #include <spdlog/spdlog.h>
@@ -13,8 +14,9 @@ namespace bt {
 void on_device_discovered(void* adapter, const char* addr, const char* name, void* userData) {
     ScanArgs* args = static_cast<ScanArgs*>(userData);
     args->m.lock();
-    if (name && std::string{name} == args->name) {
+    if (name && std::regex_match(name, args->nameRegex)) {
         args->success = true;
+        args->name = name;
         args->addr = addr;
         gattlib_adapter_scan_disable(adapter);
         SPDLOG_INFO("Coffee maker found!");
@@ -26,7 +28,7 @@ void on_device_discovered(void* adapter, const char* addr, const char* name, voi
     }
 }
 
-std::shared_ptr<ScanArgs> scan_for_device(std::string&& name, const bool* canceled) {
+std::shared_ptr<ScanArgs> scan_for_device(const std::string& regexStr, const bool* canceled) {
     SPDLOG_DEBUG("Scanning for devices...");
     void* adapter = nullptr;
     if (gattlib_adapter_open(nullptr, &adapter)) {
@@ -35,7 +37,7 @@ std::shared_ptr<ScanArgs> scan_for_device(std::string&& name, const bool* cancel
     }
 
     std::shared_ptr<ScanArgs> args = std::make_shared<ScanArgs>();
-    args->name = std::move(name);
+    args->nameRegex = std::regex(regexStr);
     args->doneMutex.lock();
 
     size_t timeoutSeconds = 0;
