@@ -4,7 +4,7 @@ target_include_directories(io INTERFACE
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
-target_sources(io PRIVATE
+target_sources(io INTERFACE
      # Header files (useful in IDEs)
      io/csv.hpp)
 
