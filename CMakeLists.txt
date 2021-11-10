@@ -77,9 +77,9 @@ endif()
 
 include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-conan_cmake_configure(REQUIRES catch2/2.13.6
-                               spdlog/1.8.5
-                               tinyxml2/8.0.0
+conan_cmake_configure(REQUIRES catch2/2.13.7
+                               spdlog/1.9.2
+                               tinyxml2/9.0.0
                       GENERATORS cmake_find_package
                       BUILD missing)
 
