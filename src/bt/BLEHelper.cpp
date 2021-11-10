@@ -24,7 +24,7 @@ void on_device_discovered(void* adapter, const char* addr, const char* name, voi
     }
     args->m.unlock();
     if (name) {
-        SPDLOG_DEBUG("FOUND: {}", name);
+        // SPDLOG_DEBUG("FOUND: {}", name);
     }
 }
 
