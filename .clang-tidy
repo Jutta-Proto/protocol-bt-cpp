@@ -29,7 +29,8 @@ Checks: '*,
 -hicpp-signed-bitwise,
 -misc-no-recursion,
 -google-readability-todo,
--cppcoreguidelines-pro-bounds-constant-array-index
+-cppcoreguidelines-pro-bounds-constant-array-index,
+-bugprone-easily-swappable-parameters
 '
 WarningsAsErrors: '*'
 HeaderFilterRegex: 'src/*.hpp'
