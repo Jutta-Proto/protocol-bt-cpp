@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bt/BLEDevice.hpp"
+#include "date/date.hpp"
 #include "jutta_bt_proto/CoffeeMakerLoader.hpp"
 #include <cstddef>
 #include <functional>
@@ -10,7 +11,6 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
-#include <date/date.h>
 
 //---------------------------------------------------------------------------
 namespace jutta_bt_proto {

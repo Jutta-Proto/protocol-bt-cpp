@@ -1,6 +1,7 @@
 #include <gattlib.h>  // Include first since we have some structs forward declared
 
 #include "bt/ByteEncDecoder.hpp"
+#include "date/date.hpp"
 #include "jutta_bt_proto/CoffeeMaker.hpp"
 #include "jutta_bt_proto/CoffeeMakerLoader.hpp"
 #include "jutta_bt_proto/Utils.hpp"
@@ -12,7 +13,6 @@
 #include <string>
 #include <thread>
 #include <bluetooth/sdp.h>
-#include <date/date.h>
 #include <spdlog/spdlog.h>
 
 //---------------------------------------------------------------------------

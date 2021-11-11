@@ -5,8 +5,12 @@ target_include_directories(io INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
 target_sources(io INTERFACE
+    # Header files (useful in IDEs)
+    io/csv.hpp)
+
+target_sources(date INTERFACE
      # Header files (useful in IDEs)
-     io/csv.hpp)
+     date/date.hpp)
 
 target_include_directories(bt PUBLIC
     $<INSTALL_INTERFACE:include>
