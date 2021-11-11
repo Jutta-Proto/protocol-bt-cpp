@@ -2,7 +2,6 @@
 
 #include "bt/BLEDevice.hpp"
 #include "jutta_bt_proto/CoffeeMakerLoader.hpp"
-#include <chrono>
 #include <cstddef>
 #include <functional>
 #include <memory>

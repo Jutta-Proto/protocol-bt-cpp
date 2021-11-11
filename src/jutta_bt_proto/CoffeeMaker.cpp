@@ -6,7 +6,6 @@
 #include "jutta_bt_proto/Utils.hpp"
 #include "logger/Logger.hpp"
 #include <cassert>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
