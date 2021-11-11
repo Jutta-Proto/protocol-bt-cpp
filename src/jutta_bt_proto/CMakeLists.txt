@@ -4,7 +4,7 @@ add_library(jutta_bt_proto SHARED CoffeeMaker.cpp
                                   Utils.cpp
                                   CoffeeMakerLoader.cpp)
 
-target_link_libraries(jutta_bt_proto PUBLIC bt
+target_link_libraries(jutta_bt_proto PUBLIC bt date::date
                                      PRIVATE logger tinyxml2::tinyxml2 gattlib)
 
 # Set version for shared libraries.

@@ -13,6 +13,7 @@
 #include <string>
 #include <thread>
 #include <bluetooth/sdp.h>
+#include <date/date.h>
 #include <spdlog/spdlog.h>
 
 //---------------------------------------------------------------------------
@@ -162,9 +163,9 @@ uint16_t CoffeeMaker::to_uint16_t_little_endian(const std::vector<uint8_t>& data
     return (static_cast<uint16_t>(data[offset + 1]) << 8) | static_cast<uint16_t>(data[offset]);
 }
 
-std::chrono::year_month_day CoffeeMaker::to_ymd(const std::vector<uint8_t>& data, size_t offset) {
+date::year_month_day CoffeeMaker::to_ymd(const std::vector<uint8_t>& data, size_t offset) {
     uint16_t date = to_uint16_t_little_endian(data, offset);
-    return std::chrono::year(((date & 65024) >> 9) + 1990) / ((date & 480) >> 5) / (date & 31);
+    return date::year(((date & 65024) >> 9) + 1990) / ((date & 480) >> 5) / (date & 31);
 }
 
 void CoffeeMaker::on_characteristic_read(const std::vector<uint8_t>& data, const uuid_t& uuid) {

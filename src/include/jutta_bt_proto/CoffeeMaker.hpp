@@ -11,6 +11,7 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <date/date.h>
 
 //---------------------------------------------------------------------------
 namespace jutta_bt_proto {
@@ -52,8 +53,8 @@ struct ManufacturerData {
     uint16_t articleNumber{0};
     uint16_t machineNumber{0};
     uint16_t serialNumber{0};
-    std::chrono::year_month_day machineProdDate{};
-    std::chrono::year_month_day machineProdDateUCHI{};
+    date::year_month_day machineProdDate{};
+    date::year_month_day machineProdDateUCHI{};
     uint8_t unusedSecond{0};
     uint8_t statusBits{0};
 } __attribute__((aligned(32)));
@@ -183,9 +184,9 @@ class CoffeeMaker {
      **/
     static uint16_t to_uint16_t_little_endian(const std::vector<uint8_t>& data, size_t offset);
     /**
-     * Parses the given data as a std::chrono::year_month_day object.
+     * Parses the given data as a date::year_month_day object.
      **/
-    static std::chrono::year_month_day to_ymd(const std::vector<uint8_t>& data, size_t offset);
+    static date::year_month_day to_ymd(const std::vector<uint8_t>& data, size_t offset);
     /**
      * Writes the given data to the given characteristic.
      * Allows you to specify wether the data should be encoded and the key inside the data should be overriden.
