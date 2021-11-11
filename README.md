@@ -249,7 +249,7 @@ To reverse engineer the app, follow the following steps:
 ## License and Copyright Notice
 This piece of software uses the following other libraries and dependencies:
 
-### Catch2 (2.13.6)
+### Catch2 (2.13.7)
 Catch2 is mainly a unit testing framework for C++, but it also provides basic micro-benchmarking features, and simple BDD macros.  
 Source: https://github.com/catchorg/Catch2
 
@@ -283,7 +283,7 @@ DEALINGS IN THE SOFTWARE.
 ```
 </details>
 
-### spdlog (1.8.5)
+### spdlog (1.9.2)
 Very fast, header-only/compiled, C++ logging library.  
 Source: https://github.com/gabime/spdlog
 
@@ -357,7 +357,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 </details>
 
-### TinyXML-2 (8.0.0)
+### TinyXML-2 (9.0.0)
 TinyXML-2 is a simple, small, efficient, C++ XML parser that can be easily integrated into other programs.  
 Source: https://github.com/leethomason/tinyxml2
 
