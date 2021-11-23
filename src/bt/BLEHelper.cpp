@@ -59,7 +59,6 @@ std::shared_ptr<ScanArgs> scan_for_device(const std::string& regexStr, const boo
             args->doneMutex.unlock();
             break;
         }
-        SPDLOG_DEBUG("Scann stopped.");
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
     gattlib_adapter_close(adapter);
