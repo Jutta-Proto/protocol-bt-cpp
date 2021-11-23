@@ -292,7 +292,7 @@ bool CoffeeMaker::connect() {
 
 void CoffeeMaker::disconnect() {
     if (state == CoffeeMakerState::CONNECTING || state == CoffeeMakerState::CONNECTED) {
-        set_state(CoffeeMakerState::CONNECTING);
+        set_state(CoffeeMakerState::DISCONNECTING);
 
         // Send the disconnect command:
         static const std::vector<uint8_t> command{0x00, 0x7F, 0x81};
@@ -329,6 +329,7 @@ void CoffeeMaker::set_state(CoffeeMakerState state) {
 
 void CoffeeMaker::heartbeat_run() {
     SPDLOG_INFO("Heartbeat thread started.");
+    // NOLINTNEXTLINE (altera-id-dependent-backward-branch)
     while (state == CoffeeMakerState::CONNECTED || state == CoffeeMakerState::CONNECTING) {
         stay_in_ble();
         request_status();
