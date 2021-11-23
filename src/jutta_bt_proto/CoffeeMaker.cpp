@@ -277,7 +277,11 @@ void CoffeeMaker::on_connected() {
     SPDLOG_INFO("Connected.");
 }
 
-void CoffeeMaker::on_disconnected() {}
+void CoffeeMaker::on_disconnected() {
+    if (state == CoffeeMakerState::CONNECTING || state == CoffeeMakerState::CONNECTED) {
+        disconnect();
+    }
+}
 
 bool CoffeeMaker::connect() {
     set_state(CoffeeMakerState::CONNECTING);
