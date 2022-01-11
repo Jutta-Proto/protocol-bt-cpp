@@ -42,8 +42,6 @@ int main(int /*argc*/, char** /*argv*/) {
         coffeeMaker.disconnect();
         SPDLOG_INFO("Disconnected. Waiting 5 seconds before reconnecting.");
         std::this_thread::sleep_for(std::chrono::seconds{5});
-        std::string s;
-        std::cin >> s;
     }
     return 0;
 }

@@ -64,13 +64,15 @@ bool BLEDevice::connect() {
         return false;
     }
 
-    if (gattlib_discover_primary(connection, &services, &serviceCount) != GATTLIB_SUCCESS) {
+    if (gattlib_discover_primary(connection, &services, &serviceCount) != GATTLIB_SUCCESS || serviceCount <= 0) {
         SPDLOG_ERROR("BLE device GATT discovery failed.");
         if (gattlib_disconnect(connection)) {
             SPDLOG_ERROR("BLE device disconnect failed.");
         }
+        connection = nullptr;
         return false;
     }
+
     SPDLOG_DEBUG("Discovered {} services.", serviceCount);
     SPDLOG_DEBUG("BLEDevice connected.");
     gattlib_register_on_disconnect(connection, &BLEDevice::on_disconnected, this);
