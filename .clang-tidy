@@ -30,7 +30,9 @@ Checks: '*,
 -misc-no-recursion,
 -google-readability-todo,
 -cppcoreguidelines-pro-bounds-constant-array-index,
--bugprone-easily-swappable-parameters
+-bugprone-easily-swappable-parameters,
+-altera-id-dependent-backward-branch,
+-altera-unroll-loops
 '
 WarningsAsErrors: '*'
 HeaderFilterRegex: 'src/*.hpp'
