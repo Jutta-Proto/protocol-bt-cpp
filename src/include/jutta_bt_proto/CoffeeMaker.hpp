@@ -11,6 +11,7 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <eventpp/callbacklist.h>
 
 //---------------------------------------------------------------------------
 namespace jutta_bt_proto {
@@ -67,11 +68,12 @@ class CoffeeMaker {
  public:
     static const RelevantUUIDs RELEVANT_UUIDS;
 
-    using StateChangedEventHandler = std::function<void(const CoffeeMakerState&)>;
-    using ManDataChangedEventHandler = std::function<void(const ManufacturerData&)>;
-    using AboutDataChangedEventHandler = std::function<void(const AboutData&)>;
-    using JoeChangedEventHandler = std::function<void(const std::shared_ptr<Joe>&)>;
-    using AlertsChangedEventHandler = std::function<void(const std::vector<const Alert*>&)>;
+    // Event handler:
+    eventpp::CallbackList<void(const CoffeeMakerState&)> stateChangedEventHandler;
+    eventpp::CallbackList<void(const ManufacturerData&)> manDataChangedEventHandler;
+    eventpp::CallbackList<void(const AboutData&)> aboutDataChangedEventHandler;
+    eventpp::CallbackList<void(const std::shared_ptr<Joe>&)> joeChangedEventHandler;
+    eventpp::CallbackList<void(const std::vector<const Alert*>&)> alertsChangedEventHandler;
 
  private:
     bt::BLEDevice bleDevice;
@@ -85,13 +87,6 @@ class CoffeeMaker {
     AboutData aboutData{};
     std::vector<const Alert*> alerts{};
 
-    // Event handler:
-    std::unique_ptr<StateChangedEventHandler> stateChangedEventHandler{nullptr};
-    std::unique_ptr<ManDataChangedEventHandler> manDataChangedEventHandler{nullptr};
-    std::unique_ptr<AboutDataChangedEventHandler> aboutDataChangedEventHandler{nullptr};
-    std::unique_ptr<JoeChangedEventHandler> joeChangedEventHandler{nullptr};
-    std::unique_ptr<AlertsChangedEventHandler> alertsChangedEventHandler{nullptr};
-
  public:
     explicit CoffeeMaker(std::string&& name, std::string&& addr);
     CoffeeMaker(CoffeeMaker&&) = default;
@@ -99,18 +94,6 @@ class CoffeeMaker {
     CoffeeMaker& operator=(CoffeeMaker&&) = delete;
     CoffeeMaker& operator=(const CoffeeMaker&) = delete;
     ~CoffeeMaker() = default;
-
-    void set_state_changed_event_handler(StateChangedEventHandler handler);
-    void set_man_data_changed_event_handler(ManDataChangedEventHandler handler);
-    void set_about_data_changed_event_handler(AboutDataChangedEventHandler handler);
-    void set_joe_changed_event_handler(JoeChangedEventHandler handler);
-    void set_alerts_changed_event_handler(AlertsChangedEventHandler handler);
-
-    void clear_state_changed_event_handler();
-    void clear_man_data_changed_event_handler();
-    void clear_about_data_changed_event_handler();
-    void clear_joe_changed_event_handler();
-    void clear_alerts_changed_event_handler();
 
     /**
      * Connects to the bluetooth device and returns true on success.

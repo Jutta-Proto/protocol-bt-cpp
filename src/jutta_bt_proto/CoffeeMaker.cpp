@@ -76,7 +76,7 @@ void CoffeeMaker::parse_about_data(const std::vector<uint8_t>& data) {
 
         // Invoke the about data event handler:
         if (aboutDataChangedEventHandler) {
-            (*aboutDataChangedEventHandler)(aboutData);
+            aboutDataChangedEventHandler(aboutData);
         }
     }
 }
@@ -106,7 +106,7 @@ void CoffeeMaker::parse_machine_status(const std::vector<uint8_t>& data, uint8_t
 
         // Invoke the alerts event handler:
         if (alertsChangedEventHandler) {
-            (*alertsChangedEventHandler)(alerts);
+            alertsChangedEventHandler(alerts);
         }
     }
 }
@@ -133,7 +133,7 @@ void CoffeeMaker::parse_man_data(const std::vector<uint8_t>& data) {
 
     // Invoke the manufacturer data event handler:
     if (manDataChangedEventHandler) {
-        (*manDataChangedEventHandler)(manData);
+        manDataChangedEventHandler(manData);
     }
 
     // Load machine:
@@ -149,7 +149,7 @@ void CoffeeMaker::parse_man_data(const std::vector<uint8_t>& data) {
 
     // Invoke the JOE event handler:
     if (joeChangedEventHandler) {
-        (*joeChangedEventHandler)(joe);
+        joeChangedEventHandler(joe);
     }
 }
 
@@ -326,7 +326,7 @@ void CoffeeMaker::set_state(CoffeeMakerState state) {
         this->state = state;
         // Invoke the state event handler:
         if (stateChangedEventHandler) {
-            (*stateChangedEventHandler)(this->state);
+            stateChangedEventHandler(this->state);
         }
     }
 }
@@ -342,17 +342,6 @@ void CoffeeMaker::heartbeat_run() {
     SPDLOG_INFO("Heartbeat thread ready to be joined.");
 }
 
-void CoffeeMaker::set_state_changed_event_handler(StateChangedEventHandler handler) { stateChangedEventHandler = std::make_unique<StateChangedEventHandler>(std::move(handler)); }
-void CoffeeMaker::set_man_data_changed_event_handler(ManDataChangedEventHandler handler) { manDataChangedEventHandler = std::make_unique<ManDataChangedEventHandler>(std::move(handler)); }
-void CoffeeMaker::set_about_data_changed_event_handler(AboutDataChangedEventHandler handler) { aboutDataChangedEventHandler = std::make_unique<AboutDataChangedEventHandler>(std::move(handler)); }
-void CoffeeMaker::set_joe_changed_event_handler(JoeChangedEventHandler handler) { joeChangedEventHandler = std::make_unique<JoeChangedEventHandler>(std::move(handler)); }
-void CoffeeMaker::set_alerts_changed_event_handler(AlertsChangedEventHandler handler) { alertsChangedEventHandler = std::make_unique<AlertsChangedEventHandler>(std::move(handler)); }
-
-void CoffeeMaker::clear_state_changed_event_handler() { stateChangedEventHandler = nullptr; }
-void CoffeeMaker::clear_man_data_changed_event_handler() { manDataChangedEventHandler = nullptr; }
-void CoffeeMaker::clear_about_data_changed_event_handler() { aboutDataChangedEventHandler = nullptr; }
-void CoffeeMaker::clear_joe_changed_event_handler() { joeChangedEventHandler = nullptr; }
-void CoffeeMaker::clear_alerts_changed_event_handler() { alertsChangedEventHandler = nullptr; }
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_proto
 //---------------------------------------------------------------------------

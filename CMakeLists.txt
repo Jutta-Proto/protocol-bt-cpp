@@ -109,6 +109,11 @@ FetchContent_Declare(gattlib
                      GIT_TAG master)
 FetchContent_MakeAvailable(gattlib)
 
+FetchContent_Declare(eventpp
+                     GIT_REPOSITORY https://github.com/wqking/eventpp.git
+                     GIT_TAG cf1ba5689d51d9aafeedfc28788f08690d8b0f40) # State on master from the 18.01.2022
+FetchContent_MakeAvailable(eventpp)
+
 restore_variable(DESTINATION CMAKE_CXX_CLANG_TIDY BACKUP CMAKE_CXX_CLANG_TIDY_BKP)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)

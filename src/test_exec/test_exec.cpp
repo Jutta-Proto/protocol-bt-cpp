@@ -24,7 +24,7 @@ int main(int /*argc*/, char** /*argv*/) {
         }
         SPDLOG_INFO("Coffee maker found.");
         jutta_bt_proto::CoffeeMaker coffeeMaker(std::string{result->name}, std::string{result->addr});
-        coffeeMaker.set_alerts_changed_event_handler([](const std::vector<const jutta_bt_proto::Alert*>& alerts) {
+        coffeeMaker.alertsChangedEventHandler.append([](const std::vector<const jutta_bt_proto::Alert*>& alerts) {
             for (const jutta_bt_proto::Alert* alert : alerts) {
                 // NOLINTNEXTLINE (bugprone-lambda-function-name)
                 SPDLOG_INFO("New alert '{}' with type '{}'.", alert->name, alert->type);
