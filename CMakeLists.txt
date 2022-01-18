@@ -103,10 +103,10 @@ find_package(tinyxml2 REQUIRED)
 # Disable linting for fetch content projects
 clear_variable(DESTINATION CMAKE_CXX_CLANG_TIDY BACKUP CMAKE_CXX_CLANG_TIDY_BKP)
 
+set(GATTLIB_BUILD_DOCS OFF)
 FetchContent_Declare(gattlib
                      GIT_REPOSITORY https://github.com/labapart/gattlib.git
                      GIT_TAG master)
-set(GATTLIB_BUILD_DOCS OFF)
 FetchContent_MakeAvailable(gattlib)
 
 restore_variable(DESTINATION CMAKE_CXX_CLANG_TIDY BACKUP CMAKE_CXX_CLANG_TIDY_BKP)
