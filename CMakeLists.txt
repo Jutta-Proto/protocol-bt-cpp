@@ -106,7 +106,7 @@ clear_variable(DESTINATION CMAKE_CXX_CLANG_TIDY BACKUP CMAKE_CXX_CLANG_TIDY_BKP)
 set(GATTLIB_BUILD_DOCS OFF)
 FetchContent_Declare(gattlib
                      GIT_REPOSITORY https://github.com/labapart/gattlib.git
-                     GIT_TAG master)
+                     GIT_TAG bb90b55ddec9c1817729a507ca096c2a514d8dc3) # State on master from the 03.12.2021
 FetchContent_MakeAvailable(gattlib)
 
 FetchContent_Declare(eventpp

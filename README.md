@@ -453,3 +453,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 </details>
+
+### gattlib (master bb90b55ddec9c1817729a507ca096c2a514d8dc3)
+A library used to access Generic Attribute Profile (GATT) protocol of BLE (Bluetooth Low Energy) devices.
+Source: https://github.com/labapart/gattlib
