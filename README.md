@@ -21,12 +21,12 @@ Most of this was done by [Reverse Engineering](#reverse-engineering) the Android
 There are several steps of obfuscation being done by the JURA coffee maker to prevent others from reading the bare protocol or sending arbitrary commands to it.
 
 #### Connecting to an JURA coffee maker
-To connect to an JURA coffee maker via Bluetooth a [Smart Control](https://uk.jura.com/en/homeproducts/accessories/SmartConnect-Main-72167) dongle is required.
+To connect to a JURA coffee maker via Bluetooth a [Smart Control](https://uk.jura.com/en/homeproducts/accessories/SmartConnect-Main-72167) dongle is required.
 This dongle has to be plugged into the coffee maker.
 Once this has been done, we can connect to the `TT214H BlueFrog` device via Bluetooth.
 
 #### Obtaining a key
-Onc connected we have to obtain the key used for decoding and encoding the send data.
+Once connected we have to obtain the key used for decoding and encoding the data to be sent.
 This is done by analyzing the `advertisement data`, or more concrete the `manufacturer data` found when scanning for devices.
 Here the `manufacturer data` is structured as follows:
 ```
@@ -100,7 +100,7 @@ First we have to make sure, we set the first byte of your data to the `key` and 
 ### Heartbeat
 The coffee maker stays initially connected for 20 seconds. After that it disconnects.
 To prevent this, we have to send at least every 10 seconds a heartbeat to it.
-The heartbeat is `0x007F80` encoded and the send to the `P Mode` Characteristic `5a401538-ab2e-2548-c435-08c300000710`.
+The heartbeat is `0x007F80` encoded and the send to the `P Mode` Characteristic `5a401529-ab2e-2548-c435-08c300000710`.
 For example if the key is `42`, then the encoded data send should be `0x77656d` (without the `0x` ;) ).
 
 ## Bluetooth Characteristics
@@ -108,7 +108,7 @@ For example if the key is `42`, then the encoded data send should be `0x77656d` 
 ## Overview
 Here is an overview about all the known characteristics and services exposed by the coffee maker and some additional information in case we have found out, how to use them.
  
-| Name | Characteristic | Notes |
+| Name | Services | Notes |
 | --- | --- | --- |
 | Default | `5a401523-ab2e-2548-c435-08c300000710` | Default service containing all relevant characteristics. |
 | UART | `5a401623-ab2e-2548-c435-08c300000710` | Contains a TX and RX UART characteristic. |
@@ -138,7 +138,7 @@ This characteristic can only be read and provides general information about the 
 * `5a401524-ab2e-2548-c435-08c300000710`
 * Encoded: `true`
 
-When reading from this characteristic, the received data has be be decoded. Once decoded, the first byte has to be the `key` used for decoding. Else, something went wrong.
+When reading from this characteristic, the received data has be be decoded. Once decoded, the first byte has to be the `key` used for decoding. Otherwise, something went wrong.
 Starting from byte 1, the data represents status bits for the coffee maker.
 For example bit 0 is set in case the water tray is missing and bit 1 of the first byte in case there is not enough water.
 For an exact mapping of bits to their action we need the machine files found for example inside the Android app.
