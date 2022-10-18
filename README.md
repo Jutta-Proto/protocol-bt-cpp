@@ -101,7 +101,8 @@ First we have to make sure, we set the first byte of your data to the `key` and 
 The coffee maker stays initially connected for 20 seconds. After that it disconnects.
 To prevent this, we have to send at least every 10 seconds a heartbeat to it.
 The heartbeat is `0x007F80` encoded and the send to the `P Mode` Characteristic `5a401529-ab2e-2548-c435-08c300000710`.
-For example if the key is `42`, then the encoded data send should be `0x77656d` (without the `0x` ;) ).
+For example if the key is `0x2A`, then the encoded data send should be `0x77656d` (without the `0x` ;) ).
+Keep in mind we have to set byte zero of our data that should be encoded to the key: `0x007F80` -> `0x2A7F80` -> `0x77656d`
 
 ## Bluetooth Characteristics
 
