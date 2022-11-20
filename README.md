@@ -123,7 +123,7 @@ Here is an overview of all the known characteristics and services exposed by the
 | P Mode | `5a401529-ab2e-2548-c435-08c300000710` | `true` |
 | P Mode Read | `5a401538-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
 | Start Product | `5a401525-ab2e-2548-c435-08c300000710` | `true` |
-| Statistics Command | `5A401533-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
+| Statistics Command | `5A401533-ab2e-2548-c435-08c300000710` | `true` |
 | Statistics Data | `5A401534-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
 | Update Product Statistics | `5a401528-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
 | UART TX | `5a401624-ab2e-2548-c435-08c300000710` | `true` |
@@ -141,7 +141,7 @@ This characteristic can only be read and provides general information about the 
 
 When reading from this characteristic, the received data has be be decoded. Once decoded, the first byte has to be the `key` used for decoding. Otherwise, something went wrong.
 Starting from byte 1, the data represents status bits for the coffee maker.
-For example bit 0 is set in case the water tray is missing and bit 1 of the first byte in case there is not enough water.
+For example, bit 0 is set in case the water tray is missing and bit 1 of the first byte in case there is not enough water.
 For an exact mapping of bits to their action, we need the machine files found, for example, inside the Android app.
 More about this here: [Reverse Engineering](#reverse-engineering)
 
@@ -153,7 +153,7 @@ Used for sending the heartbeat to the coffee maker to prevent it from disconnect
 
 ### Start Product
 * `5a401525-ab2e-2548-c435-08c300000710`
-* Encoded: `True`
+* Encoded: `true`
 Used to start preparing products.
 How to brew coffee can be found here: [Brewing Coffee](#brewing-coffee)
 
@@ -168,6 +168,72 @@ Probably exposes a raw TX interface for interacting directly with the coffee mak
 * Encoded: `UNKNOWN`
 
 Probably exposes a raw RX interface for interacting directly with the coffee maker.
+
+### Statistics Command
+* `5A401533-ab2e-2548-c435-08c300000710`
+* Encoded: `true`
+
+#### Writing
+Allows requesting statistics like product counts and maintenance data from the coffee maker.
+A command sent to this characteristic is built as follows and consists of the following 5 bytes (hexadecimal):
+```
+00 0001 FFFF
+```
+
+* `0x00` The first by has to be set to 0.
+* `0x0001` To request the overall product statistics. To get the daily counter use `0x0010`.
+* `0xFFFF` Defines the products we want to retrieve statistics for. All bits set to one forces data for all products. Selecting only specific products is done as follows:
+
+```c++
+void get_prod_stat_bits() const {
+    std::array<uint8_t, 2> bArr{0};
+
+    for (const Product& p : joe->products) {
+        size_t code = p.code_to_size_t();
+
+        code /= 4;
+        size_t arrOffset = code / 8;
+        assert(arrOffset < bArr.size());
+        bArr[arrOffset] = (1 << (code % 8)) | (bArr[arrOffset] & 0xFF);
+    }
+
+    // The resulting bytes are now inside bArr.
+}
+```
+
+#### Reading
+Once data has been written to the characteristic, we can read from it after a delay of 1200 ms.
+The command indicates success when the value read does not start with `0x0E`.
+For example:
+```
+0x0EA2A2A2 -> We wrote an invalid command to the characteristic.
+0xA200A2A2 -> Success, we now can read all statistics from the "Statistics Data" characteristic.
+0x4200A2A2 -> Success, we now can read all statistics from the "Statistics Data" characteristic.
+```
+
+### Statistics Data
+* `5A401534-ab2e-2548-c435-08c300000710`
+* Encoded: `true`
+
+This characteristic contains the statistics requested by sending a request to the `Statistics Command` characteristic.
+Such a response could look as follows (hex):
+```
+00014E00000000002700009800000A00FFFF00000300FFFF00000900FFFF00FFFF00FFFF00FFFF00006700FFFF00FFFF00FFFF00000000000200000000FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00000000000000000000000000FFFF00FFFF00FFFF00FFFF00000000000000000000000000FFFF00FFFF00FFFF00FFFF00000000000000000000000000FFFF00FFFF00FFFF00FFFF0000000000000000000000000000000000000000000000000000000000000000
+```
+
+It is split into multiple parts. Each part consists of six hex chars (3 bytes).
+```
+00014E 000000 000027 000098 00000A 00FFFF 000003 00FFFF 000009 00FFFF...
+```
+Each block describes the counter for a different product, except the first block.
+The first block (`0x00014E` in this case) represents the total product count.
+In this example, the coffee maker has produced `0x14E` (or 334 in decimal) products.
+
+The offset of a product statistic is calculated by the product code found inside the machine file for the coffee maker.
+For example, inside the `EF532V2.xml` file, we find the following information: `<PRODUCT Code="03" Name="Coffee" ...`
+Code `0x03` indicates we find the product count for "Coffee" at index `0x03`.
+The fourth block (counting from zero) is `0x000098`, translated to decimal, means the coffee maker has already produced 152 cups of regular "Coffee".
+
 
 ## Brewing Coffee
 A command to brew a coffee consists of multiple parts.
