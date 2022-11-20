@@ -161,16 +161,16 @@ How to brew coffee can be found here: [Brewing Coffee](#brewing-coffee)
 * `5a401624-ab2e-2548-c435-08c300000710`
 * Encoded: `UNKNOWN`
 
-Probably exposes a raw TX interface for interaction directly with the coffee maker.
+Probably exposes a raw TX interface for interacting directly with the coffee maker.
 
 ### UART RX
 * `5a401625-ab2e-2548-c435-08c300000710`
 * Encoded: `UNKNOWN`
 
-Probably exposes a raw RX interface for interaction directly with the coffee maker.
+Probably exposes a raw RX interface for interacting directly with the coffee maker.
 
 ## Brewing Coffee
-A command for starting preparing a product is built out of multiple parts.
+A command to brew a coffee consists of multiple parts.
 Those parts depend on the machine file for the coffee maker.
 The following example uses the `EF532V2.xml` file for an JURA E6 coffee maker.
 More about this here: [Reverse Engineering](#reverse-engineering)
