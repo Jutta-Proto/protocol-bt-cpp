@@ -31,12 +31,9 @@ int main(int /*argc*/, char** /*argv*/) {
             }
         });
         if (coffeeMaker.connect()) {
-            size_t i = 0;
             while (coffeeMaker.get_state() == jutta_bt_proto::CONNECTED) {
-                std::this_thread::sleep_for(std::chrono::seconds{1});
-                if (++i == 10) {
-                    coffeeMaker.request_coffee(coffeeMaker.get_joe()->products[1]);
-                }
+                coffeeMaker.request_statistics();
+                std::this_thread::sleep_for(std::chrono::seconds{5});
             }
         }
         coffeeMaker.disconnect();

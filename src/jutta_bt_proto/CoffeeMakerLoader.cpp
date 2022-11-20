@@ -74,6 +74,16 @@ std::string Product::to_bt_command() const {
     return "00" + result.substr(0, 30);
 }
 
+size_t Product::code_to_size_t() const {
+    std::vector<uint8_t> codeVec = from_hex_string(code);
+    size_t codeVal = 0;
+    for (const uint8_t c : codeVec) {
+        codeVal <<= 8;
+        codeVal |= c;
+    }
+    return codeVal;
+}
+
 std::unordered_map<size_t, const Machine> load_machines(const std::filesystem::path& path) {
     SPDLOG_INFO("Loading machines...");
     std::unordered_map<size_t, const Machine> result;
@@ -85,7 +95,7 @@ std::unordered_map<size_t, const Machine> load_machines(const std::filesystem::p
     std::string fileName;
     uint8_t version = 0;
     while (in.read_row(articleNumber, name, fileName, version)) {
-        result.emplace(std::make_pair(articleNumber, Machine(articleNumber, std::string{name}, std::string{fileName}, version)));
+        result.emplace(articleNumber, Machine(articleNumber, std::string{name}, std::string{fileName}, version));
     }
     SPDLOG_INFO("Loaded {} machines.", result.size());
     return result;

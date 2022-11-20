@@ -4,6 +4,7 @@
 #include "date/date.hpp"
 #include "jutta_bt_proto/CoffeeMakerLoader.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -74,6 +75,7 @@ class CoffeeMaker {
     eventpp::CallbackList<void(const AboutData&)> aboutDataChangedEventHandler;
     eventpp::CallbackList<void(const std::shared_ptr<Joe>&)> joeChangedEventHandler;
     eventpp::CallbackList<void(const std::vector<const Alert*>&)> alertsChangedEventHandler;
+    eventpp::CallbackList<void(const std::shared_ptr<Joe>&)> productStatisticsChangedEventHandler;
 
  private:
     bt::BLEDevice bleDevice;
@@ -112,7 +114,7 @@ class CoffeeMaker {
     [[nodiscard]] const AboutData& get_about_data() const;
     [[nodiscard]] const std::vector<const Alert*>& get_alerts() const;
     /**
-     * Performs a gracefull shutdown with rinsing.
+     * Performs a graceful shutdown with rinsing.
      **/
     void shutdown();
     /**
@@ -147,6 +149,12 @@ class CoffeeMaker {
     void write_tx(const std::string& s);
     void request_coffee();
     void request_coffee(const Product& product);
+    /**
+     * Requests product statistics.
+     * On success all products inside the joe will be updated with the lates product counts.
+     * Also triggers the productStatisticsChangedEventHandler event on success.
+     **/
+    void request_statistics();
 
  private:
     void set_state(CoffeeMakerState state);
@@ -161,6 +169,10 @@ class CoffeeMaker {
     void parse_machine_status(const std::vector<uint8_t>& data, uint8_t key);
     static void parse_rx(const std::vector<uint8_t>& data, uint8_t key);
     static std::string parse_version(const std::vector<uint8_t>& data, size_t from, size_t to);
+    static void parse_statistics_command(const std::vector<uint8_t>& data, uint8_t key);
+    void parse_statistics_data(const std::vector<uint8_t>& data, uint8_t key);
+    static size_t get_prod_ctr_val(const std::vector<uint8_t>& data, size_t offset);
+    void append_prod_stat_bits(std::vector<uint8_t> data) const;
     /**
      * Converts the given data to an uint16_t from little endian.
      **/
@@ -193,6 +205,7 @@ class CoffeeMaker {
      * Should be the entry point of a new thread.
      **/
     void heartbeat_run();
+    std::vector<uint8_t> build_prod_start_stats_cmd();
 };
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_proto

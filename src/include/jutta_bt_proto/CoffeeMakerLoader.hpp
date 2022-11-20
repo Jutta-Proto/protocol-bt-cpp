@@ -69,6 +69,8 @@ struct Product {
     std::optional<MinMaxOption> waterAmount;
     std::optional<MinMaxOption> milkFoamAmount;
 
+    size_t statCounter{0};
+
     Product(std::string&& name, std::string&& code, std::optional<ItemsOption>&& strength, std::optional<ItemsOption>&& temperature, std::optional<MinMaxOption>&& waterAmount, std::optional<MinMaxOption> milkFoamAmount) : name(std::move(name)),
                                                                                                                                                                                                                               code(std::move(code)),
                                                                                                                                                                                                                               strength(std::move(strength)),
@@ -77,6 +79,7 @@ struct Product {
                                                                                                                                                                                                                               milkFoamAmount(std::move(milkFoamAmount)) {}
 
     [[nodiscard]] std::string to_bt_command() const;
+    [[nodiscard]] size_t code_to_size_t() const;
 } __attribute__((aligned(128)));
 
 struct Alert {
@@ -94,6 +97,8 @@ struct Joe {
     const Machine* machine;
     std::vector<Product> products;
     std::vector<Alert> alerts;
+
+    size_t statTotalCount{0};
 
     Joe(std::string&& dated, const Machine* machine, std::vector<Product>&& products, std::vector<Alert>&& alerts) : dated(std::move(dated)),
                                                                                                                      machine(machine),

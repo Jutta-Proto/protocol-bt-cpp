@@ -6,12 +6,15 @@
 #include "jutta_bt_proto/CoffeeMakerLoader.hpp"
 #include "jutta_bt_proto/Utils.hpp"
 #include "logger/Logger.hpp"
+#include <array>
 #include <cassert>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <thread>
+#include <vector>
 #include <bluetooth/sdp.h>
 #include <spdlog/spdlog.h>
 
@@ -158,6 +161,60 @@ void CoffeeMaker::parse_rx(const std::vector<uint8_t>& data, uint8_t key) {
     SPDLOG_INFO("Read from RX: {}", to_hex_string(actData));
 }
 
+/**
+ * Parses the statistics command response and prints an error in case the response indicates an unsuccessful action.
+ **/
+void CoffeeMaker::parse_statistics_command(const std::vector<uint8_t>& data, uint8_t key) {
+    std::vector<std::uint8_t> actData = bt::encDecBytes(data, key);
+    // In case the received data starts with '0x0E', the statistics command has not been successful.
+    if (actData.size() > 2 && (actData[0] != 0x0 || actData[1] != 0xE)) {
+        SPDLOG_DEBUG("Successful statistics command: {}", to_hex_string(actData));
+    } else {
+        SPDLOG_ERROR("Statistics command has not been successful: {}", to_hex_string(actData));
+    }
+}
+
+size_t CoffeeMaker::get_prod_ctr_val(const std::vector<uint8_t>& data, size_t offset) {
+    const size_t bytesPerVal = 3;
+    const size_t valueOffset = offset * bytesPerVal;
+    if (data.size() < valueOffset + bytesPerVal) {
+        return 0;
+    }
+    assert(data.size() >= valueOffset + bytesPerVal);
+
+    size_t result = 0;
+    for (size_t i = 0; i < bytesPerVal; i++) {
+        result <<= 8;
+        result |= data[valueOffset + i];
+    }
+    return result;
+}
+
+void CoffeeMaker::parse_statistics_data(const std::vector<uint8_t>& data, uint8_t key) {
+    std::vector<std::uint8_t> actData = bt::encDecBytes(data, key);
+    SPDLOG_DEBUG("Read statistics data: {}", to_hex_string(actData));
+
+    joe->statTotalCount = get_prod_ctr_val(actData, 0);
+    SPDLOG_INFO("Total number of products: {}", joe->statTotalCount);
+
+    for (Product& p : joe->products) {
+        size_t code = p.code_to_size_t();
+        size_t result = get_prod_ctr_val(actData, code);
+        if (result != 0xFFFF) {
+            p.statCounter = result;
+            SPDLOG_DEBUG("Product {}: {}", p.name, result);
+        } else {
+            p.statCounter = 0;
+            SPDLOG_WARN("Product {} has invalid counter!", p.name);
+        }
+    }
+
+    // Invoke the product statistics changed event handler:
+    if (productStatisticsChangedEventHandler) {
+        productStatisticsChangedEventHandler(joe);
+    }
+}
+
 uint16_t CoffeeMaker::to_uint16_t_little_endian(const std::vector<uint8_t>& data, size_t offset) {
     return (static_cast<uint16_t>(data[offset + 1]) << 8) | static_cast<uint16_t>(data[offset]);
 }
@@ -187,6 +244,14 @@ void CoffeeMaker::on_characteristic_read(const std::vector<uint8_t>& data, const
     // RX:
     else if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.UART_RX_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
         parse_rx(data, manData.key);
+    }
+    // Statistics Command:
+    else if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.STATISTICS_COMMAND_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
+        parse_statistics_command(data, manData.key);
+    }
+    // Statistics Data:
+    else if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.STATISTICS_DATA_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
+        parse_statistics_data(data, manData.key);
     } else {
         // TODO print
     }
@@ -247,6 +312,34 @@ void CoffeeMaker::request_coffee(const Product& product) {
     const std::string commandHexStr = product.to_bt_command();
     static const std::vector<uint8_t> command = from_hex_string(commandHexStr);
     write(RELEVANT_UUIDS.START_PRODUCT_CHARACTERISTIC_UUID, command, true, true);
+}
+
+void CoffeeMaker::append_prod_stat_bits(std::vector<uint8_t> data) const {
+    std::array<uint8_t, 2> bArr{0};
+
+    for (const Product& p : joe->products) {
+        size_t code = p.code_to_size_t();
+
+        code /= 4;
+        size_t arrOffset = code / 8;
+        assert(arrOffset < bArr.size());
+        bArr[arrOffset] = (1 << (code % 8)) | (bArr[arrOffset] & 0xFF);
+    }
+
+    data.push_back(bArr[0]);
+    data.push_back(bArr[1]);
+}
+
+void CoffeeMaker::request_statistics() {
+    std::chrono::milliseconds pModeDelay{1200};
+    stay_in_ble();
+    write(RELEVANT_UUIDS.STATISTICS_COMMAND_CHARACTERISTIC_UUID, build_prod_start_stats_cmd(), true, true);
+    std::this_thread::sleep_for(pModeDelay);
+    bleDevice.read_characteristic(RELEVANT_UUIDS.STATISTICS_COMMAND_CHARACTERISTIC_UUID);
+    std::this_thread::sleep_for(pModeDelay);
+    stay_in_ble();
+    bleDevice.read_characteristic(RELEVANT_UUIDS.STATISTICS_DATA_CHARACTERISTIC_UUID);
+    std::this_thread::sleep_for(pModeDelay);
 }
 
 void CoffeeMaker::stay_in_ble() {
@@ -340,6 +433,24 @@ void CoffeeMaker::heartbeat_run() {
         std::this_thread::sleep_for(std::chrono::seconds{1});
     }
     SPDLOG_INFO("Heartbeat thread ready to be joined.");
+}
+
+std::vector<uint8_t> CoffeeMaker::build_prod_start_stats_cmd() {
+    std::vector<uint8_t> result;
+    // Padding:
+    result.push_back(0);
+
+    // Daily counter: 16
+    // Product Counter: 1
+    result.push_back(0);
+    result.push_back(1);
+
+    // For the maintainence counters
+    // result.push_back(1);
+
+    // Append all products. An alternative is 0xFFFF to force all products:
+    append_prod_stat_bits(result);
+    return result;
 }
 
 //---------------------------------------------------------------------------
