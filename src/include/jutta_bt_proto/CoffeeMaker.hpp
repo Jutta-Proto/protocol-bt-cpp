@@ -174,7 +174,7 @@ class CoffeeMaker {
     static size_t get_prod_ctr_val(const std::vector<uint8_t>& data, size_t offset);
     void append_prod_stat_bits(std::vector<uint8_t> data) const;
     /**
-     * Converts the given data to an uint16_t from little endian.
+     * Converts the given data to an uint16_t from little-endian.
      **/
     static uint16_t to_uint16_t_little_endian(const std::vector<uint8_t>& data, size_t offset);
     /**
