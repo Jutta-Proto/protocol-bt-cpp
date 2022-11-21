@@ -32,7 +32,7 @@ int main(int /*argc*/, char** /*argv*/) {
         });
         if (coffeeMaker.connect()) {
             while (coffeeMaker.get_state() == jutta_bt_proto::CONNECTED) {
-                coffeeMaker.request_statistics();
+                coffeeMaker.request_product_statistics();
                 std::this_thread::sleep_for(std::chrono::seconds{5});
             }
         }

@@ -154,7 +154,7 @@ class CoffeeMaker {
      * On success all products inside the joe will be updated with the lates product counts.
      * Also triggers the productStatisticsChangedEventHandler event on success.
      **/
-    void request_statistics();
+    void request_product_statistics();
 
  private:
     void set_state(CoffeeMakerState state);

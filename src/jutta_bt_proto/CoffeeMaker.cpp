@@ -323,14 +323,14 @@ void CoffeeMaker::append_prod_stat_bits(std::vector<uint8_t> data) const {
         code /= 4;
         size_t arrOffset = code / 8;
         assert(arrOffset < bArr.size());
-        bArr[arrOffset] = (1 << (code % 8)) | (bArr[arrOffset] & 0xFF);
+        bArr[arrOffset] |= (1 << (code % 8));
     }
 
     data.push_back(bArr[0]);
     data.push_back(bArr[1]);
 }
 
-void CoffeeMaker::request_statistics() {
+void CoffeeMaker::request_product_statistics() {
     std::chrono::milliseconds pModeDelay{1200};
     stay_in_ble();
     write(RELEVANT_UUIDS.STATISTICS_COMMAND_CHARACTERISTIC_UUID, build_prod_start_stats_cmd(), true, true);
@@ -440,16 +440,20 @@ std::vector<uint8_t> CoffeeMaker::build_prod_start_stats_cmd() {
     // Padding:
     result.push_back(0);
 
-    // Daily counter: 16
     // Product Counter: 1
+    // Daily counter: 16
+    // Requesting daily counters fails currently since we can not parse the result.
     result.push_back(0);
     result.push_back(1);
 
     // For the maintainence counters
     // result.push_back(1);
 
-    // Append all products. An alternative is 0xFFFF to force all products:
-    append_prod_stat_bits(result);
+    // Append all products. An alternative is 0xFFFF to force all products.
+    // append_prod_stat_bits() is broken currently since it does not
+    result.push_back(0xFF);
+    result.push_back(0xFF);
+    // append_prod_stat_bits(result);
     return result;
 }
 
