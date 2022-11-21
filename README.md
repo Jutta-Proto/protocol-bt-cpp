@@ -74,7 +74,7 @@ Optional extended data starting at byte 27:
 * `machineProdDateUCHI`: 16 Bit. Starts at byte 12. **Probably** the steam plate production date in a special format.
 * `statusBits`: 8 Bit. Starts at byte 15. Some initial status bits: 4 - supports incasso, 6 - supports master pin, 7 - supports reset
 * `bfVerStr`: 8 Byte. Starts at byte 27 BlueFrog ASCII version string (optional).
-* `coffeeMachineVerStr`: 17 Byte. Starts at byte 35. Coffee machine ASCII version string (optional).
+* `coffeeMachineVerStr`: 17 Byte. Starts at byte 35. Coffee maker ASCII version string (optional).
 * `lastConnectedTabledID`: 32 Bit. Starts at byte 51. An int representing the last connection ID.
 
 #### Parsing dates
@@ -311,7 +311,7 @@ Most of the information found here has been discovered by reverse engineering th
 To reverse engineer the app, follow the following steps:
 * Download the [`JURA J.O.E.®`](https://play.google.com/store/apps/details?id=ch.toptronic.joe&hl=de&gl=US) app from the Google Play Store. For this, you can use, for example, the [APK DOWNLOADER from  Hamidreza Moradi](https://github.com/HamidrezaMoradi/APK-Downloader).
 * Once you have the APK, you can use [JADX](https://github.com/skylot/jadx) too. Most of the code is written in Java, but there are parts written in Kotlin, which will not be able to be decompiled from Java byte code.
-* In JADEX have a look at the `resources/assets/machinefiles` directory, where you can find all machine files describing individual coffee machines and their available functions.
+* In JADEX have a look at the `resources/assets/machinefiles` directory, where you can find all machine files describing individual coffee makers and their available functions.
 
 ## License and Copyright Notice
 This piece of software uses the following other libraries and dependencies:
