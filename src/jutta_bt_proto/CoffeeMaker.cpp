@@ -75,7 +75,7 @@ void CoffeeMaker::parse_about_data(const std::vector<uint8_t>& data) {
     if (blueFrogVersion != aboutData.blueFrogVersion || coffeeMachineVersion != aboutData.coffeeMachineVersion) {
         aboutData.blueFrogVersion = std::move(blueFrogVersion);
         aboutData.coffeeMachineVersion = std::move(coffeeMachineVersion);
-        SPDLOG_DEBUG("Found new about data. BlueFrog Version: {} Coffee Machine Version: {}", aboutData.blueFrogVersion, aboutData.coffeeMachineVersion);
+        SPDLOG_DEBUG("Found new about data. BlueFrog Version: {} Coffee Makers Version: {}", aboutData.blueFrogVersion, aboutData.coffeeMachineVersion);
 
         // Invoke the about data event handler:
         if (aboutDataChangedEventHandler) {
@@ -108,8 +108,8 @@ void CoffeeMaker::parse_machine_status(const std::vector<uint8_t>& data, uint8_t
         alerts.insert(alerts.end(), newAlerts.begin(), newAlerts.end());
 
         // Invoke the alerts event handler:
-        if (alertsChangedEventHandler) {
-            alertsChangedEventHandler(alerts);
+        if (joe->alertsChangedEventHandler) {
+            joe->alertsChangedEventHandler(alerts);
         }
     }
 }
@@ -174,8 +174,7 @@ void CoffeeMaker::parse_statistics_command(const std::vector<uint8_t>& data, uin
     }
 }
 
-size_t CoffeeMaker::get_prod_ctr_val(const std::vector<uint8_t>& data, size_t offset) {
-    const size_t bytesPerVal = 3;
+size_t CoffeeMaker::get_stat_val(const std::vector<uint8_t>& data, size_t offset, size_t bytesPerVal) {
     const size_t valueOffset = offset * bytesPerVal;
     if (data.size() < valueOffset + bytesPerVal) {
         return 0;
@@ -194,12 +193,58 @@ void CoffeeMaker::parse_statistics_data(const std::vector<uint8_t>& data, uint8_
     std::vector<std::uint8_t> actData = bt::encDecBytes(data, key);
     SPDLOG_DEBUG("Read statistics data: {}", to_hex_string(actData));
 
-    joe->statTotalCount = get_prod_ctr_val(actData, 0);
+    switch (statParserMode) {
+        case StatParseMode::DAILY_COUNTERS:
+            break;
+
+        case StatParseMode::MAINTENANCE_COUNTER:
+            parse_maintainence_counter_data(actData);
+            break;
+
+        case StatParseMode::MAINTENANCE_PERCENT:
+            parse_maintainence_percent_data(actData);
+            break;
+
+        case StatParseMode::PRODUCT_COUNTERS:
+            parse_product_counter_data(actData);
+            break;
+
+        case StatParseMode::SPECIAL_TOTAL_COUNTERS:
+            break;
+    }
+}
+
+void CoffeeMaker::parse_maintainence_percent_data(const std::vector<uint8_t>& data) {
+    for (size_t i = 0; i < joe->maintenancePercentages.size(); i++) {
+        joe->maintenancePercentages[i].percent = static_cast<uint8_t>(get_stat_val(data, i, 1));
+        SPDLOG_DEBUG("{}: {}%", joe->maintenancePercentages[i].name, joe->maintenancePercentages[i].percent);
+    }
+
+    // Invoke the event handler:
+    if (joe->maintenancePercentagesChangedEventHandler) {
+        joe->maintenancePercentagesChangedEventHandler(joe->maintenancePercentages);
+    }
+}
+
+void CoffeeMaker::parse_maintainence_counter_data(const std::vector<uint8_t>& data) {
+    for (size_t i = 0; i < joe->maintenanceCounters.size(); i++) {
+        joe->maintenanceCounters[i].count = static_cast<uint16_t>(get_stat_val(data, i, 2));
+        SPDLOG_DEBUG("{}: {}", joe->maintenanceCounters[i].name, joe->maintenanceCounters[i].count);
+    }
+
+    // Invoke the event handler:
+    if (joe->maintenanceCountersChangedEventHandler) {
+        joe->maintenanceCountersChangedEventHandler(joe->maintenanceCounters);
+    }
+}
+
+void CoffeeMaker::parse_product_counter_data(const std::vector<uint8_t>& data) {
+    joe->statTotalCount = get_stat_val(data, 0, 3);
     SPDLOG_INFO("Total number of products: {}", joe->statTotalCount);
 
     for (Product& p : joe->products) {
         size_t code = p.code_to_size_t();
-        size_t result = get_prod_ctr_val(actData, code);
+        size_t result = get_stat_val(data, code, 3);
         if (result != 0xFFFF) {
             p.statCounter = result;
             SPDLOG_DEBUG("Product {}: {}", p.name, result);
@@ -209,9 +254,9 @@ void CoffeeMaker::parse_statistics_data(const std::vector<uint8_t>& data, uint8_
         }
     }
 
-    // Invoke the product statistics changed event handler:
-    if (productStatisticsChangedEventHandler) {
-        productStatisticsChangedEventHandler(joe);
+    // Invoke the event handler:
+    if (joe->productStatisticCountersChangedEventHandler) {
+        joe->productStatisticCountersChangedEventHandler(joe);
     }
 }
 
@@ -330,16 +375,15 @@ void CoffeeMaker::append_prod_stat_bits(std::vector<uint8_t> data) const {
     data.push_back(bArr[1]);
 }
 
-void CoffeeMaker::request_product_statistics() {
-    std::chrono::milliseconds pModeDelay{1200};
-    stay_in_ble();
-    write(RELEVANT_UUIDS.STATISTICS_COMMAND_CHARACTERISTIC_UUID, build_prod_start_stats_cmd(), true, true);
-    std::this_thread::sleep_for(pModeDelay);
+void CoffeeMaker::request_statistics(StatParseMode mode) {
+    std::chrono::milliseconds suggestedDelay{1200};
+    write(RELEVANT_UUIDS.STATISTICS_COMMAND_CHARACTERISTIC_UUID, build_stats_cmd(mode), true, true);
+    std::this_thread::sleep_for(suggestedDelay);
+    statParserMode = mode;
     bleDevice.read_characteristic(RELEVANT_UUIDS.STATISTICS_COMMAND_CHARACTERISTIC_UUID);
-    std::this_thread::sleep_for(pModeDelay);
-    stay_in_ble();
+    std::this_thread::sleep_for(suggestedDelay);
     bleDevice.read_characteristic(RELEVANT_UUIDS.STATISTICS_DATA_CHARACTERISTIC_UUID);
-    std::this_thread::sleep_for(pModeDelay);
+    std::this_thread::sleep_for(suggestedDelay);
 }
 
 void CoffeeMaker::stay_in_ble() {
@@ -435,25 +479,27 @@ void CoffeeMaker::heartbeat_run() {
     SPDLOG_INFO("Heartbeat thread ready to be joined.");
 }
 
-std::vector<uint8_t> CoffeeMaker::build_prod_start_stats_cmd() {
+std::vector<uint8_t> CoffeeMaker::build_stats_cmd(StatParseMode mode) {
     std::vector<uint8_t> result;
+    result.resize(5);
     // Padding:
-    result.push_back(0);
+    result[0] = 0;
 
-    // Product Counter: 1
-    // Daily counter: 16
-    // Requesting daily counters fails currently since we can not parse the result.
-    result.push_back(0);
-    result.push_back(1);
+    // Statistics type
+    result[1] = (mode & 0xFF00) >> 8;
+    result[2] = mode & 0x00FF;
 
-    // For the maintainence counters
-    // result.push_back(1);
+    // Padding:
+    if (mode == StatParseMode::PRODUCT_COUNTERS) {
+        // Append all products. An alternative is 0xFFFF to force all products.
+        // append_prod_stat_bits() is broken currently since it does not
+        result[3] = 0xFF;
+        result[4] = 0xFF;
+    } else {
+        result[3] = 1;
+        result[4] = 0;
+    }
 
-    // Append all products. An alternative is 0xFFFF to force all products.
-    // append_prod_stat_bits() is broken currently since it does not
-    result.push_back(0xFF);
-    result.push_back(0xFF);
-    // append_prod_stat_bits(result);
     return result;
 }
 
