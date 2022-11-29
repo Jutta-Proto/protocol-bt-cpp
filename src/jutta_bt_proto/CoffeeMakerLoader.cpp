@@ -174,6 +174,42 @@ void load_alerts(std::vector<Alert>* alerts, tinyxml2::XMLElement* joe) {
     }
 }
 
+void load_maintenance_counters(std::vector<MaintenanceCounter>& maintenanceCounters, tinyxml2::XMLElement* joe) {
+    tinyxml2::XMLElement* statisticXml = joe->FirstChildElement("STATISTIC");
+    assert(statisticXml);
+    tinyxml2::XMLElement* maintenanceXml = statisticXml->FirstChildElement("MAINTENANCEPAGE");
+    assert(maintenanceXml);
+
+    for (const tinyxml2::XMLElement* bankXml = maintenanceXml->FirstChildElement("BANK"); bankXml != nullptr; bankXml = bankXml->NextSiblingElement("BANK")) {
+        std::string name = bankXml->Attribute("Name");
+        if (name == "Maintenance Counter") {
+            for (const tinyxml2::XMLElement* e = bankXml->FirstChildElement("TEXTITEM"); e != nullptr; e = e->NextSiblingElement("TEXTITEM")) {
+                std::string name = e->Attribute("Type");
+                maintenanceCounters.emplace_back(std::move(name), 0);
+            }
+            break;
+        }
+    }
+}
+
+void load_maintenance_percentages(std::vector<MaintenancePercentage>& maintenancePercentages, tinyxml2::XMLElement* joe) {
+    tinyxml2::XMLElement* statisticXml = joe->FirstChildElement("STATISTIC");
+    assert(statisticXml);
+    tinyxml2::XMLElement* maintenanceXml = statisticXml->FirstChildElement("MAINTENANCEPAGE");
+    assert(maintenanceXml);
+
+    for (const tinyxml2::XMLElement* bankXml = maintenanceXml->FirstChildElement("BANK"); bankXml != nullptr; bankXml = bankXml->NextSiblingElement("BANK")) {
+        std::string name = bankXml->Attribute("Name");
+        if (name == "Maintenance Percent") {
+            for (const tinyxml2::XMLElement* e = bankXml->FirstChildElement("TEXTITEM"); e != nullptr; e = e->NextSiblingElement("TEXTITEM")) {
+                std::string name = e->Attribute("Type");
+                maintenancePercentages.emplace_back(std::move(name), 0);
+            }
+            break;
+        }
+    }
+}
+
 std::shared_ptr<Joe> load_joe(const Machine* machine) {
     tinyxml2::XMLDocument doc;
     std::string path = "machinefiles/" + machine->fileName + ".xml";
@@ -187,8 +223,14 @@ std::shared_ptr<Joe> load_joe(const Machine* machine) {
     std::vector<Alert> alerts;
     load_alerts(&alerts, joe);
 
+    std::vector<MaintenanceCounter> maintenanceCounters;
+    load_maintenance_counters(maintenanceCounters, joe);
+
+    std::vector<MaintenancePercentage> maintenancePercentages;
+    load_maintenance_percentages(maintenancePercentages, joe);
+
     SPDLOG_INFO("JOE loaded.");
-    return std::make_shared<Joe>(std::move(dated), machine, std::move(products), std::move(alerts));
+    return std::make_shared<Joe>(std::move(dated), machine, std::move(products), std::move(alerts), std::move(maintenanceCounters), std::move(maintenancePercentages));
 }
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_proto
