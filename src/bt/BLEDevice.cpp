@@ -64,10 +64,12 @@ bool BLEDevice::connect() {
         return false;
     }
 
-    if (gattlib_discover_primary(connection, &services, &serviceCount) != GATTLIB_SUCCESS || serviceCount <= 0) {
-        SPDLOG_ERROR("BLE device GATT discovery failed.");
-        if (gattlib_disconnect(connection)) {
-            SPDLOG_ERROR("BLE device disconnect failed.");
+    int result = gattlib_discover_primary(connection, &services, &serviceCount);
+    if (result != GATTLIB_SUCCESS || serviceCount <= 0) {
+        SPDLOG_ERROR("BLE device GATT discovery failed with error code {}.", result);
+        result = gattlib_disconnect(connection);
+        if (result != GATTLIB_SUCCESS) {
+            SPDLOG_ERROR("BLE device disconnect failed with error code {}.", result);
         }
         connection = nullptr;
         return false;
@@ -104,8 +106,9 @@ void BLEDevice::read_characteristic(const uuid_t& characteristic) {
 
     void* buffer = nullptr;
     size_t bufLen = 0;
-    if (gattlib_read_char_by_uuid(connection, &uuid, &buffer, &bufLen) != GATTLIB_SUCCESS) {
-        SPDLOG_WARN("Failed to read characteristic '{}'.", uuidStr.data());
+    int result = gattlib_read_char_by_uuid(connection, &uuid, &buffer, &bufLen);
+    if (result != GATTLIB_SUCCESS) {
+        SPDLOG_WARN("Failed to read characteristic '{}' with error code {}.", uuidStr.data(), result);
         return;
     }
     // Convert to a vector:
@@ -141,11 +144,12 @@ bool BLEDevice::write(const uuid_t& characteristic, const std::vector<uint8_t>& 
     uuid_t uuid = characteristic;
     std::array<char, MAX_LEN_UUID_STR + 1> uuidStr{};
     gattlib_uuid_to_string(&uuid, uuidStr.data(), uuidStr.size());
-    if (gattlib_write_char_by_uuid(connection, &uuid, data.data(), data.size()) == GATTLIB_SUCCESS) {
+    int result = gattlib_write_char_by_uuid(connection, &uuid, data.data(), data.size());
+    if (result == GATTLIB_SUCCESS) {
         SPDLOG_TRACE("Wrote {} byte to characteristic '{}'.", data.size(), uuidStr.data());
         return true;
     }
-    SPDLOG_ERROR("Failed to write to characteristic '{}'!", uuidStr.data());
+    SPDLOG_ERROR("Failed to write to characteristic '{}' with error code {}!", uuidStr.data(), result);
     return false;
 }
 
@@ -153,11 +157,12 @@ bool BLEDevice::subscribe(const uuid_t& characteristic) {
     const uuid_t uuid = characteristic;
     std::array<char, MAX_LEN_UUID_STR + 1> uuidStr{};
     gattlib_uuid_to_string(&uuid, uuidStr.data(), uuidStr.size());
-    if (gattlib_notification_start(connection, &uuid) == GATTLIB_SUCCESS) {
+    int result = gattlib_notification_start(connection, &uuid);
+    if (result == GATTLIB_SUCCESS) {
         SPDLOG_DEBUG("Subscribed to characteristic '{}'.", uuidStr.data());
         return true;
     }
-    SPDLOG_ERROR("Failed to subscribe to characteristic '{}'!", uuidStr.data());
+    SPDLOG_ERROR("Failed to subscribe to characteristic '{}' with error code {}!", uuidStr.data(), result);
     return false;
 }
 
