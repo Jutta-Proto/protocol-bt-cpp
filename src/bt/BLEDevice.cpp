@@ -65,8 +65,18 @@ bool BLEDevice::connect() {
     }
 
     int result = gattlib_discover_primary(connection, &services, &serviceCount);
-    if (result != GATTLIB_SUCCESS || serviceCount <= 0) {
+    if (result != GATTLIB_SUCCESS) {
         SPDLOG_ERROR("BLE device GATT discovery failed with error code {}.", result);
+        result = gattlib_disconnect(connection);
+        if (result != GATTLIB_SUCCESS) {
+            SPDLOG_ERROR("BLE device disconnect failed with error code {}.", result);
+        }
+        connection = nullptr;
+        return false;
+    }
+
+    if (serviceCount <= 0) {
+        SPDLOG_ERROR("BLE device GATT discovery failed with no ({}) services found.", serviceCount);
         result = gattlib_disconnect(connection);
         if (result != GATTLIB_SUCCESS) {
             SPDLOG_ERROR("BLE device disconnect failed with error code {}.", result);
