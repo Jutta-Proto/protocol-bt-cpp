@@ -158,7 +158,8 @@ void CoffeeMaker::parse_man_data(const std::vector<uint8_t>& data) {
 
 void CoffeeMaker::parse_rx(const std::vector<uint8_t>& data, uint8_t key) {
     std::vector<std::uint8_t> actData = bt::encDecBytes(data, key);
-    SPDLOG_INFO("Read from RX: {}", to_hex_string(actData));
+    SPDLOG_INFO("Read from RX (dec hex): {}", to_hex_string(actData));
+    SPDLOG_INFO("Read from RX (dec str): {}", std::string(actData.begin(), actData.end()));
 }
 
 /**
@@ -323,7 +324,7 @@ void CoffeeMaker::write_tx(const std::string& s) {
 }
 
 void CoffeeMaker::write_tx(const std::vector<uint8_t>& data) {
-    write(RELEVANT_UUIDS.UART_TX_CHARACTERISTIC_UUID, data, true, false);
+    write(RELEVANT_UUIDS.UART_TX_CHARACTERISTIC_UUID, data, true, true);
 }
 
 bool CoffeeMaker::write(const uuid_t& characteristic, const std::vector<uint8_t>& data, bool encode, bool overrideKey) {
