@@ -167,6 +167,7 @@ This could be used in a way where users have to authenticate first via some exte
 The coffee maker would always be locked and the only way to create a cup of coffee was by sending commands via Bluetooth.
 
 **Locking**
+
 Write `0x0001` to this characteristic to lock the coffee maker.
 Encode this message like all other messages, but **do not** override the first byte at the end with the key.
 
@@ -175,6 +176,7 @@ Here is an example:
 `0x0001` gets encoded to `0x77E0` using the key `0x2A` and then sent to the characteristic.
 
 **Unlocking**
+
 Write `0x0000` to this characteristic to lock the coffee maker.
 Encode this message like all other messages, but **do not** override the first byte at the end with the key.
 
@@ -258,7 +260,6 @@ The offset of a product statistic is calculated by the product code found inside
 For example, inside the `EF532V2.xml` file, we find the following information: `<PRODUCT Code="03" Name="Coffee" ...`
 Code `0x03` indicates we find the product count for "Coffee" at index `0x03`.
 The fourth block (counting from zero) is `0x000098`, translated to decimal, means the coffee maker has already produced 152 cups of regular "Coffee".
-
 
 ## Brewing Coffee
 A command to brew a coffee consists of multiple parts.
