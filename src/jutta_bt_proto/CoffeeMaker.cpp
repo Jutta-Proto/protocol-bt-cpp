@@ -198,9 +198,6 @@ void CoffeeMaker::parse_statistics_data(const std::vector<uint8_t>& data, uint8_
     SPDLOG_DEBUG("Read statistics data: {}", to_hex_string(actData));
 
     switch (statParserMode) {
-        case StatParseMode::DAILY_COUNTERS:
-            break;
-
         case StatParseMode::MAINTENANCE_COUNTER:
             parse_maintainence_counter_data(actData);
             break;
@@ -211,9 +208,6 @@ void CoffeeMaker::parse_statistics_data(const std::vector<uint8_t>& data, uint8_
 
         case StatParseMode::PRODUCT_COUNTERS:
             parse_product_counter_data(actData);
-            break;
-
-        case StatParseMode::SPECIAL_TOTAL_COUNTERS:
             break;
     }
 }

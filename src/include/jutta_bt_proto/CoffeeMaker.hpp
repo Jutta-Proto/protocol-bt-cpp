@@ -48,11 +48,19 @@ enum CoffeeMakerState {
 };
 
 enum StatParseMode : uint16_t {
+    /**
+     * Triggers the Joe::productStatisticCountersChangedEventHandler event handler.
+     * It contains a pointer to Joe containing the products with their individual counters.
+     **/
     PRODUCT_COUNTERS = 1,
+    /**
+     * Triggers the Joe::maintenanceCountersChangedEventHandler event handler.
+     **/
     MAINTENANCE_COUNTER = 4,
-    MAINTENANCE_PERCENT = 8,
-    DAILY_COUNTERS = 16,
-    SPECIAL_TOTAL_COUNTERS = 64
+    /**
+     * Triggers the Joe::maintenancePercentagesChangedEventHandler event handler.
+     **/
+    MAINTENANCE_PERCENT = 8
 };
 
 struct ManufacturerData {
