@@ -403,7 +403,7 @@ void CoffeeMaker::on_connected() {
     }
     parse_man_data(manData);
 
-    // Send the initial hearbeat:
+    // Send the initial heartbeat:
     stay_in_ble();
 
     // Request basic information:
