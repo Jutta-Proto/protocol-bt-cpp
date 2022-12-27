@@ -24,19 +24,20 @@ int main(int /*argc*/, char** /*argv*/) {
         }
         SPDLOG_INFO("Coffee maker found.");
         jutta_bt_proto::CoffeeMaker coffeeMaker(std::string{result->name}, std::string{result->addr});
-        coffeeMaker.alertsChangedEventHandler.append([](const std::vector<const jutta_bt_proto::Alert*>& alerts) {
-            for (const jutta_bt_proto::Alert* alert : alerts) {
-                // NOLINTNEXTLINE (bugprone-lambda-function-name)
-                SPDLOG_INFO("New alert '{}' with type '{}'.", alert->name, alert->type);
-            }
+        coffeeMaker.joeChangedEventHandler.append([](const std::shared_ptr<jutta_bt_proto::Joe>& joe) {
+            joe->alertsChangedEventHandler.append([](const std::vector<const jutta_bt_proto::Alert*>& alerts) {
+                for (const jutta_bt_proto::Alert* alert : alerts) {
+                    // NOLINTNEXTLINE (bugprone-lambda-function-name)
+                    SPDLOG_INFO("New alert '{}' with type '{}'.", alert->name, alert->type);
+                }
+            });
         });
         if (coffeeMaker.connect()) {
-            size_t i = 0;
             while (coffeeMaker.get_state() == jutta_bt_proto::CONNECTED) {
-                std::this_thread::sleep_for(std::chrono::seconds{1});
-                if (++i == 10) {
-                    coffeeMaker.request_coffee(coffeeMaker.get_joe()->products[1]);
-                }
+                coffeeMaker.request_statistics(jutta_bt_proto::StatParseMode::MAINTENANCE_COUNTER);
+                coffeeMaker.request_statistics(jutta_bt_proto::StatParseMode::MAINTENANCE_PERCENT);
+                coffeeMaker.request_statistics(jutta_bt_proto::StatParseMode::PRODUCT_COUNTERS);
+                std::this_thread::sleep_for(std::chrono::seconds{5});
             }
         }
         coffeeMaker.disconnect();

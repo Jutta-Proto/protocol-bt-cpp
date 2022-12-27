@@ -21,13 +21,13 @@ Most of this was done by [Reverse Engineering](#reverse-engineering) the Android
 There are several steps of obfuscation being done by the JURA coffee maker to prevent others from reading the bare protocol or sending arbitrary commands to it.
 
 #### Connecting to an JURA coffee maker
-To connect to a JURA coffee maker via Bluetooth a [Smart Control](https://uk.jura.com/en/homeproducts/accessories/SmartConnect-Main-72167) dongle is required.
+To connect to a JURA coffee maker via Bluetooth, a [Smart Control](https://uk.jura.com/en/homeproducts/accessories/SmartConnect-Main-72167) dongle is required.
 This dongle has to be plugged into the coffee maker.
 Once this has been done, we can connect to the `TT214H BlueFrog` device via Bluetooth.
 
 #### Obtaining a key
-Once connected we have to obtain the key used for decoding and encoding the data to be sent.
-This is done by analyzing the `advertisement data`, or more concrete the `manufacturer data` found when scanning for devices.
+Once connected, we have to obtain the key used for decoding and encoding the data to be sent.
+This is done by analyzing the `advertisement data` or, more concretely, the `manufacturer data` found when scanning for devices.
 Here the `manufacturer data` is structured as follows:
 ```
  0               1               2               3               
@@ -64,50 +64,50 @@ Optional extended data starting at byte 27:
 +-+-+-+-+-+-+-+-+
 ```
 
-* `key`: 8 Bit. Starts at byte 0. The key used for decoding and encoding data.
+* `key`: 8 Bit. Starts at byte 0. The key is used for decoding and encoding data.
 * `bfMajVer`: 8 Bit. Starts at byte 1. BlueFrog major version number.
 * `bfMinVer`: 8 Bit. Starts at byte 2. BlueFrog minor version number.
-* `articleNumber`: 16 Bit. Starts at byte 4. Article number in little endian.
-* `machineNumber`: 16 Bit. Starts at byte 6. Machine number in little endian.
-* `serialNumber`: 16 Bit. Starts at byte 8. Serial number in little endian.
+* `articleNumber`: 16 Bit. Starts at byte 4. Article number in little-endian.
+* `machineNumber`: 16 Bit. Starts at byte 6. Machine number in little-endian.
+* `serialNumber`: 16 Bit. Starts at byte 8. Serial number in little-endian.
 * `machineProdDate`: 16 Bit. Starts at byte 10. Machine production date in a special format.
 * `machineProdDateUCHI`: 16 Bit. Starts at byte 12. **Probably** the steam plate production date in a special format.
 * `statusBits`: 8 Bit. Starts at byte 15. Some initial status bits: 4 - supports incasso, 6 - supports master pin, 7 - supports reset
 * `bfVerStr`: 8 Byte. Starts at byte 27 BlueFrog ASCII version string (optional).
-* `coffeeMachineVerStr`: 17 Byte. Starts at byte 35. Coffee machine ASCII version string (optional).
+* `coffeeMachineVerStr`: 17 Byte. Starts at byte 35. Coffee maker ASCII version string (optional).
 * `lastConnectedTabledID`: 32 Bit. Starts at byte 51. An int representing the last connection ID.
 
 #### Parsing dates
 The following is used to parse the `machineProdDate` and `machineProdDateUCHI` dates.
 ```c++
 void to_ymd(const std::vector<uint8_t>& data, size_t offset) {
-    uint16_t date = to_uint16_t_little_endian(data, offset); // Convert two bytes (little endian) to an unsigned short
-    uint16_t year = (date & 0xFE00) >> 9) + 1990;
+    uint16_t date = to_uint16_t_little_endian(data, offset); // Convert two bytes (little-endian) to an unsigned short
+    uint16_t year = ((date & 0xFE00) >> 9) + 1990;
     uint16_t month = (date & 0x1E0) >> 5;
     uint16_t day = date & 1F;
 }
 ```
 
 #### Decoding data
-Once we have obtained the `key` like described above, we can start decoding read data from the Bluetooth characteristics.
+Once we have obtained the `key` described above, we can start decoding read data from the Bluetooth characteristics.
 Have a look at [this](https://github.com/Jutta-Proto/protocol-bt-cpp/blob/0adb1ea802df13aac03262033706755f431f93b6/src/bt/ByteEncDecoder.cpp#L33-L47) implementation of the `encDecBytes`, which takes our obtained key and some data to decode or encode.
 Once decoded successfully, the first byte of the resulting data has to be the `key`, otherwise the decoding failed.
 
 #### Encoding data
-When encoding data which should be written to Bluetooth characteristics, we again need the `key` we have obtained like described above.
-First we have to make sure, we set the first byte of your data to the `key` and then feed it to [`encDecBytes`](https://github.com/Jutta-Proto/protocol-bt-cpp/blob/0adb1ea802df13aac03262033706755f431f93b6/src/bt/ByteEncDecoder.cpp#L33-L47), like we have done for decoding.
+When encoding data that should be written to Bluetooth characteristics, we again need the `key` we have obtained described above.
+First we have to make sure we set the first byte of your data to the `key` and then feed it to [`encDecBytes`](https://github.com/Jutta-Proto/protocol-bt-cpp/blob/0adb1ea802df13aac03262033706755f431f93b6/src/bt/ByteEncDecoder.cpp#L33-L47), as we have done for decoding.
 
 ### Heartbeat
-The coffee maker stays initially connected for 20 seconds. After that it disconnects.
+The coffee maker stays initially connected for 20 seconds. After that, it disconnects.
 To prevent this, we have to send at least every 10 seconds a heartbeat to it.
-The heartbeat is `0x007F80` encoded and the send to the `P Mode` Characteristic `5a401529-ab2e-2548-c435-08c300000710`.
-For example if the key is `0x2A`, then the encoded data send should be `0x77656d` (without the `0x` ;) ).
-Keep in mind we have to set byte zero of our data that should be encoded to the key: `0x007F80` -> `0x2A7F80` -> `0x77656d`
+The heartbeat is `0x007F80` encoded and then sent to the `P Mode` Characteristic `5a401529-ab2e-2548-c435-08c300000710`.
+For example, if the key is `0x2A`, the encoded data sent should be `0x77656d` (without the `0x` ;) ).
+Keep in mind, we have to set byte zero of our data that should be encoded to the key: `0x007F80` -> `0x2A7F80` -> `0x77656d`
 
 ## Bluetooth Characteristics
 
 ## Overview
-Here is an overview about all the known characteristics and services exposed by the coffee maker and some additional information in case we have found out, how to use them.
+Here is an overview of all the known characteristics and services exposed by the coffee maker and some additional information in case we have found out how to use them.
  
 | Name | Services | Notes |
 | --- | --- | --- |
@@ -123,7 +123,7 @@ Here is an overview about all the known characteristics and services exposed by 
 | P Mode | `5a401529-ab2e-2548-c435-08c300000710` | `true` |
 | P Mode Read | `5a401538-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
 | Start Product | `5a401525-ab2e-2548-c435-08c300000710` | `true` |
-| Statistics Command | `5A401533-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
+| Statistics Command | `5A401533-ab2e-2548-c435-08c300000710` | `true` |
 | Statistics Data | `5A401534-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
 | Update Product Statistics | `5a401528-ab2e-2548-c435-08c300000710` | `UNKNOWN` |
 | UART TX | `5a401624-ab2e-2548-c435-08c300000710` | `true` |
@@ -133,7 +133,7 @@ Here is an overview about all the known characteristics and services exposed by 
 * `5A401531-AB2E-2548-C435-08C300000710`
 * Encoded: `false`
 
-This characteristic can only be read and provides general information about the coffee maker like the `bfVerStr` (8 byte, starts at byte 27) and the `coffeeMachineVerStr` (17 byte, starts at byte 35).
+This characteristic can only be read and provides general information about the coffee maker, like the `bfVerStr`` (8 byte, starts at byte 27) and the `coffeeMachineVerStr` (17 byte, starts at byte 35).
 
 ### Machine Status
 * `5a401524-ab2e-2548-c435-08c300000710`
@@ -141,8 +141,8 @@ This characteristic can only be read and provides general information about the 
 
 When reading from this characteristic, the received data has be be decoded. Once decoded, the first byte has to be the `key` used for decoding. Otherwise, something went wrong.
 Starting from byte 1, the data represents status bits for the coffee maker.
-For example bit 0 is set in case the water tray is missing and bit 1 of the first byte in case there is not enough water.
-For an exact mapping of bits to their action we need the machine files found for example inside the Android app.
+For example, bit 0 is set in case the water tray is missing and bit 1 of the first byte in case there is not enough water.
+For an exact mapping of bits to their action, we need the machine files found, for example, inside the Android app.
 More about this here: [Reverse Engineering](#reverse-engineering)
 
 ### P Mode
@@ -153,7 +153,7 @@ Used for sending the heartbeat to the coffee maker to prevent it from disconnect
 
 ### Start Product
 * `5a401525-ab2e-2548-c435-08c300000710`
-* Encoded: `True`
+* Encoded: `true`
 Used to start preparing products.
 How to brew coffee can be found here: [Brewing Coffee](#brewing-coffee)
 
@@ -161,21 +161,87 @@ How to brew coffee can be found here: [Brewing Coffee](#brewing-coffee)
 * `5a401624-ab2e-2548-c435-08c300000710`
 * Encoded: `UNKNOWN`
 
-Probably exposes a raw TX interface for interaction directly with the coffee maker.
+Probably exposes a raw TX interface for interacting directly with the coffee maker.
 
 ### UART RX
 * `5a401625-ab2e-2548-c435-08c300000710`
 * Encoded: `UNKNOWN`
 
-Probably exposes a raw RX interface for interaction directly with the coffee maker.
+Probably exposes a raw RX interface for interacting directly with the coffee maker.
+
+### Statistics Command
+* `5A401533-ab2e-2548-c435-08c300000710`
+* Encoded: `true`
+
+#### Writing
+Allows requesting statistics like product counts and maintenance data from the coffee maker.
+A command sent to this characteristic is built as follows and consists of the following 5 bytes (hexadecimal):
+```
+00 0001 FFFF
+```
+
+* `0x00` The first by has to be set to 0.
+* `0x0001` To request the overall product statistics. To get the daily counter use `0x0010`.
+* `0xFFFF` Defines the products we want to retrieve statistics for. All bits set to one forces data for all products. Selecting only specific products is done as follows:
+
+```c++
+void get_prod_stat_bits() const {
+    std::array<uint8_t, 2> bArr{0};
+
+    for (const Product& p : joe->products) {
+        size_t code = p.code_to_size_t();
+
+        code /= 4;
+        size_t arrOffset = code / 8;
+        assert(arrOffset < bArr.size());
+        bArr[arrOffset] = (1 << (code % 8)) | (bArr[arrOffset] & 0xFF);
+    }
+
+    // The resulting bytes are now inside bArr.
+}
+```
+
+#### Reading
+Once data has been written to the characteristic, we can read from it after a delay of 1200 ms.
+The command indicates success when the value read does not start with `0x0E`.
+For example:
+```
+0x0EA2A2A2 -> We wrote an invalid command to the characteristic.
+0xA200A2A2 -> Success, we now can read all statistics from the "Statistics Data" characteristic.
+0x4200A2A2 -> Success, we now can read all statistics from the "Statistics Data" characteristic.
+```
+
+### Statistics Data
+* `5A401534-ab2e-2548-c435-08c300000710`
+* Encoded: `true`
+
+This characteristic contains the statistics requested by sending a request to the `Statistics Command` characteristic.
+Such a response could look as follows (hex):
+```
+00014E00000000002700009800000A00FFFF00000300FFFF00000900FFFF00FFFF00FFFF00FFFF00006700FFFF00FFFF00FFFF00000000000200000000FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00000000000000000000000000FFFF00FFFF00FFFF00FFFF00000000000000000000000000FFFF00FFFF00FFFF00FFFF00000000000000000000000000FFFF00FFFF00FFFF00FFFF0000000000000000000000000000000000000000000000000000000000000000
+```
+
+It is split into multiple parts. Each part consists of six hex chars (3 bytes).
+```
+00014E 000000 000027 000098 00000A 00FFFF 000003 00FFFF 000009 00FFFF...
+```
+Each block describes the counter for a different product, except the first block.
+The first block (`0x00014E` in this case) represents the total product count.
+In this example, the coffee maker has produced `0x14E` (or 334 in decimal) products.
+
+The offset of a product statistic is calculated by the product code found inside the machine file for the coffee maker.
+For example, inside the `EF532V2.xml` file, we find the following information: `<PRODUCT Code="03" Name="Coffee" ...`
+Code `0x03` indicates we find the product count for "Coffee" at index `0x03`.
+The fourth block (counting from zero) is `0x000098`, translated to decimal, means the coffee maker has already produced 152 cups of regular "Coffee".
+
 
 ## Brewing Coffee
-A command for starting preparing a product is build out of multiple parts.
+A command to brew a coffee consists of multiple parts.
 Those parts depend on the machine file for the coffee maker.
 The following example uses the `EF532V2.xml` file for an JURA E6 coffee maker.
 More about this here: [Reverse Engineering](#reverse-engineering)
 
-For example we have a look at the following command (decoded) send to the coffee maker:
+For example, we have a look at the following command (decoded) sent to the coffee maker:
 ```
 00 03 00 04 14 0000 01 00010000000000 2A
 0  1  2  3  4  5    6  7              8
@@ -201,11 +267,11 @@ The following requirements are required to build this project.
 
 ### Machine Files
 Since this lib uses the machine files provided by JURA in their Android APK, we have to extract them first.
-For this you have to perform the following steps:
+For this, you have to perform the following steps:
 
 1. Visit the [Google Play](https://play.google.com/store/apps/details?id=ch.toptronic.joe) page for the `J.O.E.® – Jura Operating Experience`.
 2. Copy the page URL.
-3. Use your favorite APK downloader to obtain the latest `J.O.E.® – Jura Operating Experience` APK. For example one could use this page: https://apps.evozi.com/apk-downloader/?id=ch.toptronic.joe
+3. Use your favorite APK downloader to obtain the latest `J.O.E.® – Jura Operating Experience` APK. For example, one could use this page: https://apps.evozi.com/apk-downloader/?id=ch.toptronic.joe
 4. Place it under `src/resources`
 5. Open a terminal under `src/resources`
 6. Execute the `extract_apk.sh` bash script to extract all required files. Example: `./extract_apk.sh myPathToTheJuraJoeApk.apk`
@@ -240,18 +306,18 @@ cmake --build .
 ```
 
 ## Reverse Engineering
-Most of the information found here has been discoverd by reverse engineering the Android APK and spoofing the traffic between the app and dongle.
+Most of the information found here has been discovered by reverse engineering the Android APK and spoofing the traffic between the app and dongle.
 
 To reverse engineer the app, follow the following steps:
-* Download the [`JURA J.O.E.®`](https://play.google.com/store/apps/details?id=ch.toptronic.joe&hl=de&gl=US) app from the Google Play Store. For this you can use for example the [APK DOWNLOADER from  Hamidreza Moradi](https://github.com/HamidrezaMoradi/APK-Downloader).
-* Once you have the APK, you can use [JADX](https://github.com/skylot/jadx) to. Most of the code is written in Java, but there are parts written in Kotlin, which will not be able to be decompiled from Java byte code.
-* In JADEX have a look at the `resources/assets/machinefiles` directory, where you can find all machine files describing individual coffee machines and their available functions.
+* Download the [`JURA J.O.E.®`](https://play.google.com/store/apps/details?id=ch.toptronic.joe&hl=de&gl=US) app from the Google Play Store. For this, you can use, for example, the [APK DOWNLOADER from  Hamidreza Moradi](https://github.com/HamidrezaMoradi/APK-Downloader).
+* Once you have the APK, you can use [JADX](https://github.com/skylot/jadx) too. Most of the code is written in Java, but there are parts written in Kotlin, which will not be able to be decompiled from Java byte code.
+* In JADEX have a look at the `resources/assets/machinefiles` directory, where you can find all machine files describing individual coffee makers and their available functions.
 
 ## License and Copyright Notice
 This piece of software uses the following other libraries and dependencies:
 
 ### Catch2 (2.13.8)
-Catch2 is mainly a unit testing framework for C++, but it also provides basic micro-benchmarking features, and simple BDD macros.  
+Catch2 is mainly a unit testing framework for C++, but it also provides basic micro-benchmarking features and simple BDD macros.  
 Source: https://github.com/catchorg/Catch2
 
 <details>

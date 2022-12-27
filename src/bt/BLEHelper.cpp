@@ -31,8 +31,9 @@ void on_device_discovered(void* adapter, const char* addr, const char* name, voi
 std::shared_ptr<ScanArgs> scan_for_device(const std::string& regexStr, const bool* canceled) {
     SPDLOG_DEBUG("Scanning for devices...");
     void* adapter = nullptr;
-    if (gattlib_adapter_open(nullptr, &adapter)) {
-        SPDLOG_ERROR("Failed to open Bluetooth adapter.");
+    int result = gattlib_adapter_open(nullptr, &adapter);
+    if (result != GATTLIB_SUCCESS) {
+        SPDLOG_ERROR("Failed to open Bluetooth adapter with error code {}.", result);
         return nullptr;
     }
 

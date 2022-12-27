@@ -4,6 +4,7 @@
 #include "date/date.hpp"
 #include "jutta_bt_proto/CoffeeMakerLoader.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -46,6 +47,22 @@ enum CoffeeMakerState {
     DISCONNECTING
 };
 
+enum StatParseMode : uint16_t {
+    /**
+     * Triggers the Joe::productStatisticCountersChangedEventHandler event handler.
+     * It contains a pointer to Joe containing the products with their individual counters.
+     **/
+    PRODUCT_COUNTERS = 1,
+    /**
+     * Triggers the Joe::maintenanceCountersChangedEventHandler event handler.
+     **/
+    MAINTENANCE_COUNTER = 4,
+    /**
+     * Triggers the Joe::maintenancePercentagesChangedEventHandler event handler.
+     **/
+    MAINTENANCE_PERCENT = 8
+};
+
 struct ManufacturerData {
     uint8_t key{0};
     uint8_t bfMajVer{0};
@@ -73,7 +90,6 @@ class CoffeeMaker {
     eventpp::CallbackList<void(const ManufacturerData&)> manDataChangedEventHandler;
     eventpp::CallbackList<void(const AboutData&)> aboutDataChangedEventHandler;
     eventpp::CallbackList<void(const std::shared_ptr<Joe>&)> joeChangedEventHandler;
-    eventpp::CallbackList<void(const std::vector<const Alert*>&)> alertsChangedEventHandler;
 
  private:
     bt::BLEDevice bleDevice;
@@ -86,6 +102,9 @@ class CoffeeMaker {
     ManufacturerData manData{};
     AboutData aboutData{};
     std::vector<const Alert*> alerts{};
+
+    StatParseMode statParserMode{};
+    bool statDataReady{false};
 
  public:
     explicit CoffeeMaker(std::string&& name, std::string&& addr);
@@ -112,7 +131,7 @@ class CoffeeMaker {
     [[nodiscard]] const AboutData& get_about_data() const;
     [[nodiscard]] const std::vector<const Alert*>& get_alerts() const;
     /**
-     * Performs a gracefull shutdown with rinsing.
+     * Performs a graceful shutdown with rinsing.
      **/
     void shutdown();
     /**
@@ -147,6 +166,11 @@ class CoffeeMaker {
     void write_tx(const std::string& s);
     void request_coffee();
     void request_coffee(const Product& product);
+    /**
+     * Requests product or maintenance statistics.
+     * On success the appropriate event gets triggered inside Joe.
+     **/
+    void request_statistics(StatParseMode mode);
 
  private:
     void set_state(CoffeeMakerState state);
@@ -155,14 +179,23 @@ class CoffeeMaker {
      * Extracts the encryption key, machine number, serial number, ...
      **/
     void analyze_man_data();
+
     void parse_man_data(const std::vector<uint8_t>& data);
     void parse_about_data(const std::vector<uint8_t>& data);
     static void parse_product_progress(const std::vector<uint8_t>& data, uint8_t key);
     void parse_machine_status(const std::vector<uint8_t>& data, uint8_t key);
     static void parse_rx(const std::vector<uint8_t>& data, uint8_t key);
     static std::string parse_version(const std::vector<uint8_t>& data, size_t from, size_t to);
+    void parse_statistics_command(const std::vector<uint8_t>& data, uint8_t key);
+    void parse_statistics_data(const std::vector<uint8_t>& data, uint8_t key);
+    void parse_maintainence_counter_data(const std::vector<uint8_t>& data);
+    void parse_maintainence_percent_data(const std::vector<uint8_t>& data);
+    void parse_product_counter_data(const std::vector<uint8_t>& data);
+
+    static size_t get_stat_val(const std::vector<uint8_t>& data, size_t offset, size_t bytesPerVal);
+    void append_prod_stat_bits(std::vector<uint8_t> data) const;
     /**
-     * Converts the given data to an uint16_t from little endian.
+     * Converts the given data to an uint16_t from little-endian.
      **/
     static uint16_t to_uint16_t_little_endian(const std::vector<uint8_t>& data, size_t offset);
     /**
@@ -181,7 +214,7 @@ class CoffeeMaker {
      **/
     void on_characteristic_read(const std::vector<uint8_t>& data, const uuid_t& uuid);
     /**
-     * Event handler that gets triggered when the coffee maker is connetced.
+     * Event handler that gets triggered when the coffee maker is connected.
      **/
     void on_connected();
     /**
@@ -193,6 +226,7 @@ class CoffeeMaker {
      * Should be the entry point of a new thread.
      **/
     void heartbeat_run();
+    static std::vector<uint8_t> build_stats_cmd(StatParseMode mode);
 };
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_proto

@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <eventpp/callbacklist.h>
 
 //---------------------------------------------------------------------------
 namespace jutta_bt_proto {
@@ -69,6 +70,8 @@ struct Product {
     std::optional<MinMaxOption> waterAmount;
     std::optional<MinMaxOption> milkFoamAmount;
 
+    size_t statCounter{0};
+
     Product(std::string&& name, std::string&& code, std::optional<ItemsOption>&& strength, std::optional<ItemsOption>&& temperature, std::optional<MinMaxOption>&& waterAmount, std::optional<MinMaxOption> milkFoamAmount) : name(std::move(name)),
                                                                                                                                                                                                                               code(std::move(code)),
                                                                                                                                                                                                                               strength(std::move(strength)),
@@ -77,6 +80,7 @@ struct Product {
                                                                                                                                                                                                                               milkFoamAmount(std::move(milkFoamAmount)) {}
 
     [[nodiscard]] std::string to_bt_command() const;
+    [[nodiscard]] size_t code_to_size_t() const;
 } __attribute__((aligned(128)));
 
 struct Alert {
@@ -89,16 +93,44 @@ struct Alert {
                                                                 type(std::move(type)) {}
 } __attribute__((aligned(128)));
 
+struct MaintenanceCounter {
+    std::string name;
+    uint16_t count;
+
+    MaintenanceCounter(std::string&& name, uint16_t count) : name(std::move(name)),
+                                                             count(count) {}
+} __attribute__((aligned(64)));
+
+struct MaintenancePercentage {
+    std::string name;
+    uint8_t percent;
+
+    MaintenancePercentage(std::string&& name, uint8_t percent) : name(std::move(name)),
+                                                                 percent(percent) {}
+} __attribute__((aligned(64)));
+
 struct Joe {
     std::string dated;
     const Machine* machine;
     std::vector<Product> products;
     std::vector<Alert> alerts;
+    std::vector<MaintenanceCounter> maintenanceCounters;
+    std::vector<MaintenancePercentage> maintenancePercentages;
 
-    Joe(std::string&& dated, const Machine* machine, std::vector<Product>&& products, std::vector<Alert>&& alerts) : dated(std::move(dated)),
-                                                                                                                     machine(machine),
-                                                                                                                     products(std::move(products)),
-                                                                                                                     alerts(std::move(alerts)) {}
+    size_t statTotalCount{0};
+
+    // Events:
+    eventpp::CallbackList<void(const std::vector<const Alert*>&)> alertsChangedEventHandler;
+    eventpp::CallbackList<void(const std::shared_ptr<Joe>&)> productStatisticCountersChangedEventHandler;
+    eventpp::CallbackList<void(const std::vector<MaintenanceCounter>&)> maintenanceCountersChangedEventHandler;
+    eventpp::CallbackList<void(const std::vector<MaintenancePercentage>&)> maintenancePercentagesChangedEventHandler;
+
+    Joe(std::string&& dated, const Machine* machine, std::vector<Product>&& products, std::vector<Alert>&& alerts, std::vector<MaintenanceCounter>&& maintenanceCounters, std::vector<MaintenancePercentage>&& maintenancePercentages) : dated(std::move(dated)),
+                                                                                                                                                                                                                                         machine(machine),
+                                                                                                                                                                                                                                         products(std::move(products)),
+                                                                                                                                                                                                                                         alerts(std::move(alerts)),
+                                                                                                                                                                                                                                         maintenanceCounters(std::move(maintenanceCounters)),
+                                                                                                                                                                                                                                         maintenancePercentages(std::move(maintenancePercentages)) {}
 } __attribute__((aligned(128)));
 
 std::unordered_map<size_t, const Machine> load_machines(const std::filesystem::path& path);
