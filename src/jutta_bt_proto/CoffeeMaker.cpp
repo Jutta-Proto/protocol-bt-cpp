@@ -507,6 +507,16 @@ std::vector<uint8_t> CoffeeMaker::build_stats_cmd(StatParseMode mode) {
     return result;
 }
 
+void CoffeeMaker::lock() {
+    write(RELEVANT_UUIDS.BARISTA_MODE_CHARACTERISTIC_UUID, {{0x00, 0x01}}, true, false);
+    SPDLOG_INFO("Coffee maker locked.");
+}
+
+void CoffeeMaker::unlock() {
+    write(RELEVANT_UUIDS.BARISTA_MODE_CHARACTERISTIC_UUID, {{0x00, 0x00}}, true, false);
+    SPDLOG_INFO("Coffee maker unlocked.");
+}
+
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_proto
 //---------------------------------------------------------------------------

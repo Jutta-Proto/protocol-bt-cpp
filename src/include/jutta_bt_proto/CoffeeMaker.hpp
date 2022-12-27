@@ -172,6 +172,15 @@ class CoffeeMaker {
      **/
     void request_statistics(StatParseMode mode);
 
+    /**
+     * Locks the coffee maker screen and disables all button input until unlock() is called.
+     **/
+    void lock();
+    /**
+     * Unlocks the coffee maker screen again after you have locked it with lock().
+     **/
+    void unlock();
+
  private:
     void set_state(CoffeeMakerState state);
     /**
