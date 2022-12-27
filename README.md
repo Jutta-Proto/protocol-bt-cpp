@@ -157,6 +157,31 @@ Used for sending the heartbeat to the coffee maker to prevent it from disconnect
 Used to start preparing products.
 How to brew coffee can be found here: [Brewing Coffee](#brewing-coffee)
 
+### Barista Mode
+* `5a401530-ab2e-2548-c435-08c300000710`
+* Encoded: `true`
+
+#### Writing
+Used for locking and unlocking the coffee maker screen and all its buttons.
+This could be used in a way where users have to authenticate first via some external service (e.g., an RFID or NFC card).
+The coffee maker would always be locked and the only way to create a cup of coffee was by sending commands via Bluetooth.
+
+**Locking**
+Write `0x0001` to this characteristic to lock the coffee maker.
+Encode this message like all other messages, but **do not** override the first byte at the end with the key.
+
+Here is an example:
+
+`0x0001` gets encoded to `0x77E0` using the key `0x2A` and then sent to the characteristic.
+
+**Unlocking**
+Write `0x0000` to this characteristic to lock the coffee maker.
+Encode this message like all other messages, but **do not** override the first byte at the end with the key.
+
+Here is an example:
+
+`0x0000` gets encoded to `0x77E1` using the key `0x2A` and then sent to the characteristic.
+
 ### UART TX
 * `5a401624-ab2e-2548-c435-08c300000710`
 * Encoded: `UNKNOWN`
