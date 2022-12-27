@@ -96,6 +96,7 @@ class CoffeeMaker {
     std::vector<const Alert*> alerts{};
 
     StatParseMode statParserMode{};
+    bool statDataReady{false};
 
  public:
     explicit CoffeeMaker(std::string&& name, std::string&& addr);
@@ -177,7 +178,7 @@ class CoffeeMaker {
     void parse_machine_status(const std::vector<uint8_t>& data, uint8_t key);
     static void parse_rx(const std::vector<uint8_t>& data, uint8_t key);
     static std::string parse_version(const std::vector<uint8_t>& data, size_t from, size_t to);
-    static void parse_statistics_command(const std::vector<uint8_t>& data, uint8_t key);
+    void parse_statistics_command(const std::vector<uint8_t>& data, uint8_t key);
     void parse_statistics_data(const std::vector<uint8_t>& data, uint8_t key);
     void parse_maintainence_counter_data(const std::vector<uint8_t>& data);
     void parse_maintainence_percent_data(const std::vector<uint8_t>& data);

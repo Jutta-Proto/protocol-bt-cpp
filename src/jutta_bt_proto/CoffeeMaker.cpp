@@ -167,12 +167,15 @@ void CoffeeMaker::parse_rx(const std::vector<uint8_t>& data, uint8_t key) {
  **/
 void CoffeeMaker::parse_statistics_command(const std::vector<uint8_t>& data, uint8_t key) {
     std::vector<std::uint8_t> actData = bt::encDecBytes(data, key);
-    // In case the received data starts with '0x0E', the statistics command has not been successful.
-    if (actData.size() > 2 && (actData[0] != 0x0 || actData[1] != 0xE)) {
+    // In case the received data starts with '0x0E', the statistics command has been successful.
+    statDataReady = actData.size() > 1 && actData[0] == 0x0E;
+
+    if (statDataReady) {
         SPDLOG_DEBUG("Successful statistics command: {}", to_hex_string(actData));
     } else {
-        SPDLOG_ERROR("Statistics command has not been successful: {}", to_hex_string(actData));
+        SPDLOG_DEBUG("Statistics data not ready yet.");
     }
+    SPDLOG_TRACE("Statistics data received: {}", to_hex_string(actData));
 }
 
 size_t CoffeeMaker::get_stat_val(const std::vector<uint8_t>& data, size_t offset, size_t bytesPerVal) {
@@ -377,14 +380,20 @@ void CoffeeMaker::append_prod_stat_bits(std::vector<uint8_t> data) const {
 }
 
 void CoffeeMaker::request_statistics(StatParseMode mode) {
-    std::chrono::milliseconds suggestedDelay{1200};
+    // Request statistics:
     write(RELEVANT_UUIDS.STATISTICS_COMMAND_CHARACTERISTIC_UUID, build_stats_cmd(mode), true, true);
-    std::this_thread::sleep_for(suggestedDelay);
     statParserMode = mode;
-    bleDevice.read_characteristic(RELEVANT_UUIDS.STATISTICS_COMMAND_CHARACTERISTIC_UUID);
-    std::this_thread::sleep_for(suggestedDelay);
+    statDataReady = false;
+
+    // Wait until the statistics are ready:
+    std::chrono::milliseconds retryInterval{500};
+    for (size_t i = 0; i < 20 && !statDataReady; i++) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(retryInterval));
+        bleDevice.read_characteristic(RELEVANT_UUIDS.STATISTICS_COMMAND_CHARACTERISTIC_UUID);
+    }
+
+    // Read statistics:
     bleDevice.read_characteristic(RELEVANT_UUIDS.STATISTICS_DATA_CHARACTERISTIC_UUID);
-    std::this_thread::sleep_for(suggestedDelay);
 }
 
 void CoffeeMaker::stay_in_ble() {
