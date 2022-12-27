@@ -42,7 +42,7 @@ Here the `manufacturer data` is structured as follows:
 |     machineProdDateUCHI       |    unused     |  statusBits   |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-Optional extended data starting at byte 27:
+Optional extended data starting at byte 28:
  0               1               2               3               
  0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -139,7 +139,7 @@ This characteristic can only be read and provides general information about the 
 * `5a401524-ab2e-2548-c435-08c300000710`
 * Encoded: `true`
 
-When reading from this characteristic, the received data has be be decoded. Once decoded, the first byte has to be the `key` used for decoding. Otherwise, something went wrong.
+When reading from this characteristic, the received data has to be decoded. Once decoded, the first byte has to be the `key` used for decoding. Otherwise, something went wrong.
 Starting from byte 1, the data represents status bits for the coffee maker.
 For example, bit 0 is set in case the water tray is missing and bit 1 of the first byte in case there is not enough water.
 For an exact mapping of bits to their action, we need the machine files found, for example, inside the Android app.
