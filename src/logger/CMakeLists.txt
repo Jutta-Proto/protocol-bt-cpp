@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 add_library(logger SHARED Logger.cpp)
 target_link_libraries(logger PUBLIC spdlog::spdlog stdc++fs)
 
-set(LOG_LEVEL Default CACHE STRING "Sets the build type")
+set(LOG_LEVEL Default CACHE STRING "Sets the log level")
 set_property(CACHE LOG_LEVEL PROPERTY STRINGS Default Trace Debug Info Warn Error Critical Off)
 
 if(${LOG_LEVEL} STREQUAL Trace)
