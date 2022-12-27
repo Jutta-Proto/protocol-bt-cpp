@@ -48,11 +48,11 @@ enum CoffeeMakerState {
 };
 
 enum StatParseMode : uint16_t {
+    PRODUCT_COUNTERS = 1,
     MAINTENANCE_COUNTER = 4,
     MAINTENANCE_PERCENT = 8,
-    PRODUCT_COUNTERS = 1,
-    SPECIAL_TOTAL_COUNTERS = 64,
-    DAILY_COUNTERS = 16
+    DAILY_COUNTERS = 16,
+    SPECIAL_TOTAL_COUNTERS = 64
 };
 
 struct ManufacturerData {
