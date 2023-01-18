@@ -47,7 +47,6 @@ std::string Product::to_bt_command() const {
     for (std::string& s : command) {
         s = "00";
     }
-    command[0] = code;
 
     if (strength) {
         strength->to_bt_command(command);
@@ -67,11 +66,14 @@ std::string Product::to_bt_command() const {
 
     // TODO: Add GRINDER_FREENESS
 
-    std::string result;
+    command[0] = code;
+
+    std::string result = "00";
     for (const std::string& s : command) {
         result += s;
     }
-    return "00" + result.substr(0, 30);
+    SPDLOG_DEBUG("Product command: {}", result);
+    return result;
 }
 
 size_t Product::code_to_size_t() const {
