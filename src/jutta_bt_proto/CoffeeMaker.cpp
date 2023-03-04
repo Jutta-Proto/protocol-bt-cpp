@@ -353,7 +353,7 @@ void CoffeeMaker::request_coffee() {
 
 void CoffeeMaker::request_coffee(const Product& product) {
     const std::string commandHexStr = product.to_bt_command();
-    static const std::vector<uint8_t> command = from_hex_string(commandHexStr);
+    const std::vector<uint8_t> command = from_hex_string(commandHexStr);
     write(RELEVANT_UUIDS.START_PRODUCT_CHARACTERISTIC_UUID, command, true, true);
 }
 
